@@ -1,0 +1,180 @@
+#include "lexer.h"
+#include <cctype>
+#include <unordered_map>
+
+using namespace std;
+
+static unordered_map<string, TokenType> keywords = {
+    {"SEQ", TokenType::SEQ},
+    {"PAR", TokenType::PAR},
+    {"if", TokenType::IF},
+    {"else", TokenType::ELSE},
+    {"while", TokenType::WHILE},
+    {"print", TokenType::PRINT},
+    {"input", TokenType::INPUT},
+    {"int", TokenType::INT},
+    {"bool", TokenType::BOOL},
+    {"string", TokenType::STRING},
+    {"c_channel", TokenType::C_CHANNEL}
+};
+
+Lexer::Lexer(const std::string& src) 
+    : source(src), position(0), line(1), column(1) {
+    if (!source.empty()) {
+        current_char = source[0];
+    } else {
+        current_char = '\0';
+    }
+}
+
+void Lexer::advance() {
+    if (current_char == '\n') {
+        line++;
+        column = 1;
+    } else {
+        column++;
+    }
+    
+    position++;
+    if (position >= source.length()) {
+        current_char = '\0';
+    } else {
+        current_char = source[position];
+    }
+}
+
+char Lexer::peek() {
+    if (position + 1 >= source.length()) {
+        return '\0';
+    }
+    return source[position + 1];
+}
+
+void Lexer::skip_whitespace() {
+    while (current_char != '\0' && isspace(current_char)) {
+        advance();
+    }
+}
+
+void Lexer::skip_comment() {
+    while (current_char != '\0' && current_char != '\n') {
+        advance();
+    }
+    if (current_char == '\n') {
+        advance();
+    }
+}
+
+Token Lexer::read_number() {
+    string number;
+    int start_line = line;
+    int start_column = column;
+    
+    while (current_char != '\0' && isdigit(current_char)) {
+        number += current_char;
+        advance();
+    }
+    
+    return Token(TokenType::NUMBER, number, start_line, start_column);
+}
+
+Token Lexer::read_string() {
+    string str;
+    int start_line = line;
+    int start_column = column;
+    
+    advance(); // Pular a aspas inicial
+    while (current_char != '\0' && current_char != '"') {
+        str += current_char;
+        advance();
+    }
+    advance(); // Pular a aspas final
+    
+    return Token(TokenType::STRING_LITERAL, str, start_line, start_column);
+}
+
+Token Lexer::read_identifier() {
+    string identifier;
+    int start_line = line;
+    int start_column = column;
+    
+    while (current_char != '\0' && (isalnum(current_char) || current_char == '_')) {
+        identifier += current_char;
+        advance();
+    }
+    
+    // Verificar se é palavra-chave
+    auto it = keywords.find(identifier);
+    if (it != keywords.end()) {
+        return Token(it->second, identifier, start_line, start_column);
+    }
+    
+    return Token(TokenType::IDENTIFIER, identifier, start_line, start_column);
+}
+
+vector<Token> Lexer::tokenize() {
+    vector<Token> tokens;
+    
+    while (current_char != '\0') {
+        skip_whitespace();
+        
+        if (current_char == '\0') break;
+        
+        // Comentários
+        if (current_char == '#') {
+            skip_comment();
+            continue;
+        }
+        
+        // Números
+        if (isdigit(current_char)) {
+            tokens.push_back(read_number());
+            continue;
+        }
+        
+        // Strings
+        if (current_char == '"') {
+            tokens.push_back(read_string());
+            continue;
+        }
+        
+        // Identificadores
+        if (isalpha(current_char) || current_char == '_') {
+            tokens.push_back(read_identifier());
+            continue;
+        }
+        
+        // Operadores e delimitadores
+        int start_line = line;
+        int start_column = column;
+        
+        switch (current_char) {
+            case '+': tokens.push_back(Token(TokenType::PLUS, "+", start_line, start_column)); break;
+            case '-': tokens.push_back(Token(TokenType::MINUS, "-", start_line, start_column)); break;
+            case '*': tokens.push_back(Token(TokenType::MULTIPLY, "*", start_line, start_column)); break;
+            case '/': tokens.push_back(Token(TokenType::DIVIDE, "/", start_line, start_column)); break;
+            case '=': 
+                if (peek() == '=') {
+                    tokens.push_back(Token(TokenType::EQUALS, "==", start_line, start_column));
+                    advance();
+                } else {
+                    tokens.push_back(Token(TokenType::ASSIGN, "=", start_line, start_column));
+                }
+                break;
+            case '(': tokens.push_back(Token(TokenType::LPAREN, "(", start_line, start_column)); break;
+            case ')': tokens.push_back(Token(TokenType::RPAREN, ")", start_line, start_column)); break;
+            case '{': tokens.push_back(Token(TokenType::LBRACE, "{", start_line, start_column)); break;
+            case '}': tokens.push_back(Token(TokenType::RBRACE, "}", start_line, start_column)); break;
+            case ';': tokens.push_back(Token(TokenType::SEMICOLON, ";", start_line, start_column)); break;
+            case ',': tokens.push_back(Token(TokenType::COMMA, ",", start_line, start_column)); break;
+            default:
+                // Caractere desconhecido - pular
+                break;
+        }
+        
+        advance();
+    }
+    
+    tokens.push_back(Token(TokenType::END_OF_FILE, "", line, column));
+    return tokens;
+}

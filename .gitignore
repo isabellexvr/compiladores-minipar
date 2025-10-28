@@ -1,0 +1,108 @@
+# =============================
+# MiniPar Compiler Project .gitignore
+# C++ / Emscripten / React (Vite + TypeScript)
+# =============================
+
+# ---- General OS / Editor ----
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.orig
+*.log
+*.tmp
+*~
+
+# VSCode local settings (keep extensions recommendations if needed)
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.example.json
+
+# ---- Build Artifacts (C/C++) ----
+*.o
+*.obj
+*.a
+*.so
+*.dll
+*.dylib
+*.exe
+*.out
+*.stackdump
+*.gcno
+*.gcda
+*.gcov
+
+# Generated dependency / build files
+*.d
+build/
+cmake-build*/
+CMakeCache.txt
+CMakeFiles/
+Makefile
+Makefile.emscripten
+*.make
+
+# If you want to keep your hand-maintained Makefiles, comment out previous lines
+# !Makefile
+# !Makefile.emscripten
+
+# ---- Project specific object directories ----
+obj/
+obj_wasm/
+
+# ---- Emscripten Outputs ----
+# Generated JS/WASM (rebuild with make -f Makefile.emscripten)
+web/compilador.js
+web/compilador.wasm
+web/react/public/compilador.js
+web/react/public/compilador.wasm
+
+# ---- React / Vite ----
+web/react/node_modules/
+web/react/.eslintcache
+web/react/dist/
+web/react/.vite/
+web/react/*.tsbuildinfo
+
+# ---- Environment / Secrets ----
+.env
+.env.*
+!.env.example
+
+# ---- Testing & Coverage ----
+coverage/
+reports/
+*.lcov
+
+# ---- Misc Tools ----
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-error.log*
+
+# ---- Archives / Packages ----
+*.tar
+*.gz
+*.zip
+*.7z
+*.rar
+
+# ---- IDE Specific ----
+.idea/
+*.iml
+
+# ---- Cache ----
+web/react/.cache/
+.cache/
+
+# ---- Temporary scratch files ----
+scratch*/
+temp/
+tmp/
+
+# ---- Generated Docs ----
+docs/_build/
+
+# =============================
+# End of file
+# =============================

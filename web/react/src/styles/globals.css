@@ -1,0 +1,17 @@
+:root {
+  --primary: #76D95B;
+  --secondary: #F2B950;
+  --accent: #8C4C3E;
+  --light: #F2F2F2;
+  --dark: #0D0D0D;
+}
+
+/* Estilos globais */
+body {
+  background-color: var(--dark);
+  color: var(--light);
+  font-family: 'Courier New', monospace;
+  margin: 0;
+  padding: 0;
+  line-height: 1.6;
+}
