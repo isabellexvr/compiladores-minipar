@@ -18,8 +18,7 @@
 
 .terminal-body { padding:1.2rem 1.5rem 1.5rem; }
 .prompt-row { display:flex; align-items:flex-start; gap:.75rem; font-family:'JetBrains Mono','Courier New',monospace; font-size:.9rem; line-height:1.5; }
-.prompt-prefix { flex-shrink:0; padding-top:2px; color:var(--secondary); font-weight:600; letter-spacing:.5px; }
-.prompt-input-wrapper { flex:1; }
+.prompt-prefix { flex-shrink:0; padding-top:0px; color:var(--secondary); font-weight:600; letter-spacing:.5px; } .prompt-input-wrapper { flex:1; }
 .terminal-input.inline { margin:0; }
 
 .terminal-dots {
@@ -66,6 +65,7 @@
 }
 
 .terminal-input { width:100%; background:transparent; border:none; color:var(--light); font-family:'JetBrains Mono','Courier New',monospace; font-size:.9rem; line-height:1.5; resize:none; outline:none; padding:0; }
+.terminal-input:focus, .terminal-input:focus-visible { outline:none !important; box-shadow:none !important; border:none !important; -webkit-box-shadow:none !important; }
 
 .terminal-input::placeholder {
     color: rgba(242, 242, 242, 0.4);
