@@ -10,11 +10,10 @@ interface Token {
 
 interface TokensTabProps {
     tokens: string[];
-    sourceCode?: string; // ← ADICIONE ISSO
+    sourceCode?: string;
 }
 
 const TokensTab: React.FC<TokensTabProps> = ({ tokens, sourceCode }) => {
-    // Se temos o código fonte, vamos extrair tokens dele diretamente
     const extractTokensFromSource = (code: string): Token[] => {
         const lines = code.split('\n');
         const extracted: Token[] = [];
@@ -22,7 +21,7 @@ const TokensTab: React.FC<TokensTabProps> = ({ tokens, sourceCode }) => {
 
         lines.forEach(line => {
             const words = line
-                .split(/(\s+|\(|\)|;|,|\+|\-|\*|\/|=)/) // Split por operadores e delimitadores
+                .split(/(\s+|\(|\)|;|,|\+|\-|\*|\/|=)/)
                 .filter(word => word.trim().length > 0);
 
             words.forEach(word => {
@@ -58,20 +57,19 @@ const TokensTab: React.FC<TokensTabProps> = ({ tokens, sourceCode }) => {
         return extracted;
     };
 
-    // Use o código fonte se disponível, senão use os tokens do backend
     const parsedTokens: Token[] = sourceCode 
         ? extractTokensFromSource(sourceCode)
         : tokens.map(token => ({ type: 'UNKNOWN', value: token }));
 
     const getTypeColor = (type: string): string => {
         const colors: { [key: string]: string } = {
-            'KEYWORD': 'var(--primary)',
-            'IDENTIFIER': 'var(--secondary)', 
-            'NUMBER': '#F2B950',
-            'OPERATOR': '#8C4C3E',
-            'ASSIGN': '#76D95B',
-            'DELIMITER': '#9B59B6',
-            'UNKNOWN': '#95A5A6'
+            'KEYWORD': '#9C27B0',     // Roxo
+            'IDENTIFIER': '#2196F3',  // Azul
+            'NUMBER': '#4CAF50',      // Verde
+            'OPERATOR': '#FF9800',    // Laranja
+            'ASSIGN': '#F44336',      // Vermelho
+            'DELIMITER': '#795548',   // Marrom
+            'UNKNOWN': '#607D8B'      // Cinza
         };
         return colors[type] || colors['UNKNOWN'];
     };
@@ -102,84 +100,156 @@ const TokensTab: React.FC<TokensTabProps> = ({ tokens, sourceCode }) => {
         return descriptions[type] || 'Tipo desconhecido';
     };
 
+    const stats = {
+        total: parsedTokens.length,
+        types: new Set(parsedTokens.map(t => t.type)).size,
+        keywords: parsedTokens.filter(t => t.type === 'KEYWORD').length,
+        identifiers: parsedTokens.filter(t => t.type === 'IDENTIFIER').length,
+        numbers: parsedTokens.filter(t => t.type === 'NUMBER').length
+    };
+
     return (
-        <div className="tokens-tab">
+        <div className="tokens-container">
+            {/* Header */}
             <div className="tokens-header">
-                <h3>Token Analysis {sourceCode && "(from source code)"}</h3>
+                <div className="tokens-title-section">
+                    <h3>Token Analysis</h3>
+                    <p className="tokens-description">
+                        Análise léxica - Tokens identificados no código fonte
+                    </p>
+                </div>
                 <div className="tokens-stats">
-                    <span className="stat">{parsedTokens.length} tokens</span>
-                    <span className="stat">
-                        {new Set(parsedTokens.map(t => t.type)).size} types
+                    <span className="stat">{stats.total} tokens</span>
+                    <span className="stat">{stats.types} tipos</span>
+                    <span className="stat">{stats.keywords} keywords</span>
+                </div>
+            </div>
+
+            {/* Legenda */}
+            <div className="tokens-legend">
+                <div className="legend-title">Tipos de Tokens:</div>
+                <div className="legend-items">
+                    <span className="legend-item" style={{ '--color': '#9C27B0' } as any}>
+                        <span className="legend-icon">🔑</span> Keyword
+                    </span>
+                    <span className="legend-item" style={{ '--color': '#2196F3' } as any}>
+                        <span className="legend-icon">🏷️</span> Identifier
+                    </span>
+                    <span className="legend-item" style={{ '--color': '#4CAF50' } as any}>
+                        <span className="legend-icon">🔢</span> Number
+                    </span>
+                    <span className="legend-item" style={{ '--color': '#FF9800' } as any}>
+                        <span className="legend-icon">⚡</span> Operator
+                    </span>
+                    <span className="legend-item" style={{ '--color': '#F44336' } as any}>
+                        <span className="legend-icon">⇄</span> Assign
                     </span>
                 </div>
             </div>
 
+            {/* Informações */}
+            <div className="tokens-info">
+                <div className="info-section">
+                    <h4>🔍 Sobre a Análise Léxica:</h4>
+                    <p>
+                        A análise léxica é a primeira fase da compilação, onde o código fonte é dividido em tokens -
+                        as menores unidades significativas da linguagem de programação.
+                    </p>
+                </div>
+            </div>
+
+            {/* Tabela de Tokens */}
             {parsedTokens.length > 0 ? (
                 <div className="tokens-table-container">
-                    <table className="tokens-table">
-                        <thead>
-                            <tr>
-                                <th className="col-index">#</th>
-                                <th className="col-type">Type</th>
-                                <th className="col-value">Value</th>
-                                <th className="col-line">Line</th>
-                                <th className="col-description">Description</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {parsedTokens.map((token, index) => (
-                                <tr key={index} className="token-row">
-                                    <td className="token-index">
-                                        <span className="index-badge">{index + 1}</span>
-                                    </td>
-                                    <td className="token-type">
-                                        <span 
-                                            className="type-badge"
-                                            style={{ 
-                                                backgroundColor: getTypeColor(token.type),
-                                                color: ['KEYWORD', 'NUMBER'].includes(token.type) ? 'var(--dark)' : 'var(--light)'
-                                            }}
-                                        >
-                                            <span className="type-icon">{getTypeIcon(token.type)}</span>
-                                            {token.type}
-                                        </span>
-                                    </td>
-                                    <td className="token-value">
-                                        <code>{token.value}</code>
-                                    </td>
-                                    <td className="token-line">
-                                        {token.line ? `Line ${token.line}` : '-'}
-                                    </td>
-                                    <td className="token-description">
-                                        {getTypeDescription(token.type)}
-                                    </td>
+                    <div className="table-header">
+                        <span className="table-title">Tokens Identificados</span>
+                        <span className="table-subtitle">{stats.total} tokens encontrados</span>
+                    </div>
+                    <div className="tokens-table-wrapper">
+                        <table className="tokens-table">
+                            <thead>
+                                <tr>
+                                    <th className="col-index">#</th>
+                                    <th className="col-icon"></th>
+                                    <th className="col-type">Tipo</th>
+                                    <th className="col-value">Valor</th>
+                                    <th className="col-line">Linha</th>
+                                    <th className="col-description">Descrição</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {parsedTokens.map((token, index) => (
+                                    <tr key={index} className="token-row">
+                                        <td className="token-index">
+                                            <span className="index-badge">{index + 1}</span>
+                                        </td>
+                                        <td className="token-icon">
+                                            <span 
+                                                className="token-icon-badge"
+                                                style={{ backgroundColor: getTypeColor(token.type) }}
+                                            >
+                                                {getTypeIcon(token.type)}
+                                            </span>
+                                        </td>
+                                        <td className="token-type">
+                                            <span 
+                                                className="type-badge"
+                                                style={{ backgroundColor: getTypeColor(token.type) }}
+                                            >
+                                                {token.type}
+                                            </span>
+                                        </td>
+                                        <td className="token-value">
+                                            <code>{token.value}</code>
+                                        </td>
+                                        <td className="token-line">
+                                            {token.line ? (
+                                                <span className="line-badge">Linha {token.line}</span>
+                                            ) : (
+                                                <span className="line-empty">—</span>
+                                            )}
+                                        </td>
+                                        <td className="token-description">
+                                            {getTypeDescription(token.type)}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             ) : (
-                <div className="no-tokens">
-                    <div className="no-tokens-icon">🔍</div>
-                    <h4>No tokens found</h4>
-                    <p>The source code doesn't contain any recognizable tokens.</p>
+                <div className="tokens-empty">
+                    <div className="empty-icon">🔍</div>
+                    <h3>Nenhum Token Encontrado</h3>
+                    <p>Não foi possível identificar tokens no código fonte.</p>
                 </div>
             )}
 
-            <div className="tokens-legend">
-                <h4>Token Types Legend</h4>
-                <div className="legend-items">
-                    {['KEYWORD', 'IDENTIFIER', 'NUMBER', 'OPERATOR', 'ASSIGN', 'DELIMITER'].map(type => (
-                        <div key={type} className="legend-item">
-                            <span 
-                                className="legend-color" 
-                                style={{ backgroundColor: getTypeColor(type) }}
-                            ></span>
-                            <span>
-                                <strong>{type}</strong> - {getTypeDescription(type)}
-                            </span>
-                        </div>
-                    ))}
+            {/* Resumo */}
+            <div className="tokens-summary">
+                <h4>📊 Resumo da Análise Léxica:</h4>
+                <div className="summary-grid">
+                    <div className="summary-item">
+                        <span className="summary-label">Total de Tokens:</span>
+                        <span className="summary-value">{stats.total}</span>
+                    </div>
+                    <div className="summary-item">
+                        <span className="summary-label">Tipos Diferentes:</span>
+                        <span className="summary-value">{stats.types}</span>
+                    </div>
+                    <div className="summary-item">
+                        <span className="summary-label">Keywords:</span>
+                        <span className="summary-value">{stats.keywords}</span>
+                    </div>
+                    <div className="summary-item">
+                        <span className="summary-label">Identificadores:</span>
+                        <span className="summary-value">{stats.identifiers}</span>
+                    </div>
+                    <div className="summary-item">
+                        <span className="summary-label">Números:</span>
+                        <span className="summary-value">{stats.numbers}</span>
+                    </div>
                 </div>
             </div>
         </div>
