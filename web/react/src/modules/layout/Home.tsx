@@ -112,13 +112,6 @@ const Home: React.FC<HomeProps> = ({ code, onChange, onCompile }) => {
                             <div className="feature-text">ARMv7 Assembly</div>
                         </div>
                     </div>
-
-                    <div className="quick-tips">
-                        <h3>💡 Quick Start</h3>
-                        <code>SEQ</code>
-                        <code>x = 10 + 5</code>
-                        <code>print x</code>
-                    </div>
                 </div>
             </div>
         </main>
