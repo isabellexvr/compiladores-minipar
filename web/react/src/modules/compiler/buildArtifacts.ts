@@ -1,41 +1,49 @@
 import type { CompilationArtifacts } from '../layout/ResultsView';
 
-// Função melhorada para extrair tokens com mais contexto
+function extractSection(raw: string, start: string, end: string): string {
+    const startIndex = raw.indexOf(start);
+    const endIndex = raw.indexOf(end);
+
+    if (startIndex === -1) return '';
+    const section = raw.substring(startIndex + start.length, endIndex === -1 ? raw.length : endIndex);
+    return section.trim();
+}
+
+// Extrai tokens
 export function extractTokens(raw: string): string[] {
-    const lines = raw.split('\n');
-    const tokens: string[] = [];
-    
-    lines.forEach(line => {
-        if (line.includes('===') && line.includes('TOKENS')) {
-            // Pular linha de cabeçalho
-            return;
-        }
-        
-        // Extrair tokens da linha (heurística melhorada)
-        const lineTokens = line
-            .replace(/Token:\s*\d+\s*Valor:\s*'([^']*)'.*/g, '$1') // Extrair valor entre aspas
-            .split(/\s+/)
-            .map(t => t.trim())
-            .filter(t => t && t !== '...' && !t.includes('mais') && !t.includes('tokens'));
-        
-        tokens.push(...lineTokens);
-    });
-    
-    return tokens.filter(token => 
-        token && 
-        token !== 'Token:' && 
-        !token.match(/^\d+$/) && // Remover números soltos (que são índices)
-        token.length > 0
-    );
+    const tokenLines = extractSection(raw, '=== ANALISADOR LÉXICO ===', '=== ANALISADOR SINTÁTICO ===')
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.startsWith('Token:'));
+
+    return tokenLines.map(line => {
+        const match = line.match(/Valor:\s*'([^']*)'/);
+        return match ? match[1] : '';
+    }).filter(Boolean);
+}
+
+// Extrai árvore sintática
+export function extractSyntaxTree(raw: string): string {
+    console.log("raw: ", raw);
+    return extractSection(raw, '=== ÁRVORE SINTÁTICA ===', '=== CÓDIGO DE TRÊS ENDEREÇOS ===');
+}
+
+// Extrai TAC e ARM se quiser
+export function extractTAC(raw: string): string {
+    return extractSection(raw, '=== CÓDIGO DE TRÊS ENDEREÇOS ===', '=== CÓDIGO ASSEMBLY ARMv7 ===');
+}
+
+export function extractARM(raw: string): string {
+    return extractSection(raw, '=== CÓDIGO ASSEMBLY ARMv7 ===', '');
 }
 
 export function buildArtifactsFromRaw(code: string, raw: string): CompilationArtifacts {
     return {
         rawOutput: raw,
         tokens: extractTokens(raw),
-        syntaxTree: 'Árvore sintática em desenvolvimento...',
+        syntaxTree: extractSyntaxTree(raw),
         symbolTable: 'Tabela de símbolos em desenvolvimento...', 
-        tac: 'Código de três endereços em desenvolvimento...',
-        arm: 'Código ARMv7 em desenvolvimento...'
+        tac: extractTAC(raw),
+        arm: extractARM(raw)
     };
 }

@@ -1,5 +1,5 @@
 SEQ
-x = 5
-y = 3
-z = x + y
-print z
+x = 10
+y = 20
+resultado = x + y
+print resultado

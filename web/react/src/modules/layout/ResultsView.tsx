@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import TokensTab from '../tabs/TokensTab';
+import ASTVisualizer from '../tabs/ASTVisualizer';
 import './ResultsView.css';
 
 export interface CompilationArtifacts {
@@ -19,14 +20,74 @@ interface ResultsViewProps {
 
 const tabs = [
     { id: 'tokens', label: 'Tokens', icon: '🔤' },
-    { id: 'syntax', label: 'Syntax', icon: '🌳' },
-    { id: 'symbols', label: 'Symbols', icon: '📊' },
-    { id: 'tac', label: '3 Address', icon: '🔢' },
-    { id: 'arm', label: 'ARMv7', icon: '⚙️' }
+    { id: 'syntax', label: 'Syntax Tree', icon: '🌳' },
+    { id: 'symbols', label: 'Symbol Table', icon: '📊' },
+    { id: 'tac', label: '3 Address Code', icon: '🔢' },
+    { id: 'arm', label: 'ARMv7 Assembly', icon: '⚙️' }
 ];
 
 const ResultsView: React.FC<ResultsViewProps> = ({ code, artifacts, onBack }) => {
     const [active, setActive] = useState<string>('tokens');
+
+    const renderTabContent = () => {
+        switch (active) {
+            case 'tokens':
+                return <TokensTab tokens={artifacts.tokens} sourceCode={code} />;
+            
+            case 'syntax':
+                return artifacts.syntaxTree ? (
+                    <ASTVisualizer astString={artifacts.syntaxTree} />
+                ) : (
+                    <div className="placeholder-content">
+                        <div className="placeholder-icon">🌳</div>
+                        <h3>No Syntax Tree Available</h3>
+                        <p>The syntax tree will appear here after compilation.</p>
+                    </div>
+                );
+            
+            case 'symbols':
+                return artifacts.symbolTable ? (
+                    <div className="code-output">
+                        <pre>{artifacts.symbolTable}</pre>
+                    </div>
+                ) : (
+                    <div className="placeholder-content">
+                        <div className="placeholder-icon">📊</div>
+                        <h3>No Symbol Table Available</h3>
+                        <p>The symbol table will appear here after compilation.</p>
+                    </div>
+                );
+            
+            case 'tac':
+                return artifacts.tac ? (
+                    <div className="code-output">
+                        <pre>{artifacts.tac}</pre>
+                    </div>
+                ) : (
+                    <div className="placeholder-content">
+                        <div className="placeholder-icon">🔢</div>
+                        <h3>No 3-Address Code Available</h3>
+                        <p>The three-address code will appear here after compilation.</p>
+                    </div>
+                );
+            
+            case 'arm':
+                return artifacts.arm ? (
+                    <div className="code-output">
+                        <pre>{artifacts.arm}</pre>
+                    </div>
+                ) : (
+                    <div className="placeholder-content">
+                        <div className="placeholder-icon">⚙️</div>
+                        <h3>No ARM Assembly Available</h3>
+                        <p>The ARMv7 assembly code will appear here after compilation.</p>
+                    </div>
+                );
+            
+            default:
+                return null;
+        }
+    };
 
     return (
         <div className="results-view">
@@ -59,14 +120,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ code, artifacts, onBack }) =>
             </div>
             
             <div className="tab-content">
-                {active === 'tokens' && <TokensTab tokens={artifacts.tokens} sourceCode={code} />}
-                {active !== 'tokens' && (
-                    <div className="placeholder-content">
-                        <div className="placeholder-icon">🚧</div>
-                        <h3>Under Construction</h3>
-                        <p>This compilation phase visualization is coming soon!</p>
-                    </div>
-                )}
+                {renderTabContent()}
             </div>
         </div>
     );

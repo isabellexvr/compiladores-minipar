@@ -51,12 +51,14 @@ export const CompilerProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         if (!moduleRef) throw new Error('Módulo não carregado');
         setCompiling(true);
         setError(null);
+
         try {
-            const ptr = moduleRef._compile_minipar(code);
-            if (!ptr) throw new Error('Ponteiro nulo retornado');
+            // 🔧 Usa cwrap para converter string JS → C automaticamente
+            const compileFn = moduleRef.cwrap('compile_minipar', 'number', ['string']);
+            const ptr = compileFn(code); // retorna ponteiro para char*
             const result = moduleRef.UTF8ToString(ptr);
-            if (moduleRef._free_string) moduleRef._free_string(ptr);
-            return result as string;
+            moduleRef._free_string(ptr); // libera memória alocada no C++
+            return result;
         } catch (e: any) {
             setError(e.message || String(e));
             throw e;
@@ -65,19 +67,18 @@ export const CompilerProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }
     }, [moduleRef]);
 
+
     const compileJson = useCallback(async (code: string) => {
         if (!moduleRef) throw new Error('Módulo não carregado');
         setCompiling(true);
         setError(null);
+
         try {
-            const ptr = moduleRef._compile_minipar_json(code);
-            if (!ptr) throw new Error('Ponteiro nulo retornado');
+            const compileJsonFn = moduleRef.cwrap('compile_minipar_json', 'number', ['string']);
+            const ptr = compileJsonFn(code);
             const result = moduleRef.UTF8ToString(ptr);
-            if (moduleRef._free_string) moduleRef._free_string(ptr);
-            
-            // Parse do JSON
-            const parsed = JSON.parse(result);
-            return parsed;
+            moduleRef._free_string(ptr);
+            return JSON.parse(result);
         } catch (e: any) {
             setError(e.message || String(e));
             throw e;
@@ -85,6 +86,7 @@ export const CompilerProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             setCompiling(false);
         }
     }, [moduleRef]);
+
 
     const value: CompilerContextValue = { ready, compiling, compile, error };
     return <CompilerContext.Provider value={value}>{children}</CompilerContext.Provider>;

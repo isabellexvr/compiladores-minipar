@@ -1,0 +1,146 @@
+.ast-visualizer {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 600px; /* ALTURA TOTAL DO COMPONENTE */
+}
+
+.visualizer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0; /* IMPEDIR QUE O HEADER ENCOLHA */
+}
+
+.visualizer-header h3 {
+  margin: 0;
+  color: #1e293b;
+  font-size: 1.1rem;
+}
+
+.visualizer-controls button {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.visualizer-controls button:hover {
+  background: #2563eb;
+}
+
+/* CONTAINER PRINCIPAL DO FLOW - DIMENSÕES FIXAS */
+.flow-container {
+  flex: 1; /* PREENCHER O ESPAÇO RESTANTE */
+  min-height: 0; /* PERMITIR QUE O FLEX FUNCIONE CORRETAMENTE */
+  width: 100%;
+}
+
+/* NODES DA AST */
+.ast-node {
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 2px solid #cbd5e1;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  min-width: 140px;
+  text-align: center;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.ast-node-program {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.ast-node-seq, .ast-node-par {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.ast-node-while {
+  border-color: #8b5cf6;
+  background: #f5f3ff;
+}
+
+.ast-node-assignment {
+  border-color: #10b981;
+  background: #ecfdf5;
+}
+
+.ast-node-binaryop {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.ast-node-print {
+  border-color: #f97316;
+  background: #fff7ed;
+}
+
+.ast-node-identifier {
+  border-color: #64748b;
+  background: #f8fafc;
+}
+
+.ast-node-number {
+  border-color: #14b8a6;
+  background: #f0fdfa;
+}
+
+.ast-node-label {
+  color: #1e293b;
+  word-break: break-word;
+}
+
+/* CUSTOMIZAÇÃO DO REACT FLOW */
+.react-flow__node-astNode {
+  font-size: 0.85rem;
+}
+
+.react-flow__edge-path {
+  stroke: #94a3b8;
+  stroke-width: 2;
+}
+
+.react-flow__controls {
+  bottom: 10px;
+  left: 10px;
+}
+
+.react-flow__minimap {
+  bottom: 10px;
+  right: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* RESPONSIVIDADE */
+@media (max-width: 768px) {
+  .ast-visualizer {
+    height: 400px;
+  }
+  
+  .visualizer-header {
+    padding: 12px 16px;
+  }
+  
+  .ast-node {
+    min-width: 120px;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+}

@@ -145,3 +145,43 @@
     opacity: 0.8;
     max-width: 300px;
 }
+
+.code-output {
+    background: #f8f9fa;
+    border: 1px solid #e1e8ed;
+    border-radius: 8px;
+    padding: 20px;
+    max-height: 600px;
+    overflow: auto;
+}
+
+.code-output pre {
+    margin: 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: #2c3e50;
+    white-space: pre-wrap;
+}
+
+.placeholder-content {
+    text-align: center;
+    padding: 60px 20px;
+    color: #7f8c8d;
+}
+
+.placeholder-icon {
+    font-size: 3rem;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.placeholder-content h3 {
+    margin: 0 0 10px 0;
+    color: #34495e;
+}
+
+.placeholder-content p {
+    margin: 0;
+    font-size: 0.95rem;
+}
