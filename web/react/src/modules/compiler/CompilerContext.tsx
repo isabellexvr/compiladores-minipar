@@ -4,6 +4,7 @@ interface CompilerContextValue {
     ready: boolean;
     compiling: boolean;
     compile: (code: string) => Promise<string>;
+    compileTAC: (code: string) => Promise<any>;
     error: string | null;
 }
 
@@ -87,8 +88,35 @@ export const CompilerProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }
     }, [moduleRef]);
 
+    // No CompilerContext.tsx, adicione esta função:
+    // No CompilerContext.tsx, adicione:
+    const compileTAC = useCallback(async (code: string) => {
+        if (!moduleRef) throw new Error('Módulo não carregado');
+        setCompiling(true);
+        setError(null);
 
-    const value: CompilerContextValue = { ready, compiling, compile, error };
+        try {
+            const compileTACFn = moduleRef.cwrap('compile_minipar_tac', 'number', ['string']);
+            const ptr = compileTACFn(code);
+            const result = moduleRef.UTF8ToString(ptr);
+            moduleRef._free_string(ptr);
+            const parsed = JSON.parse(result);
+            
+            if (parsed.success) {
+                return parsed.tac; // Retorna apenas o array de instruções TAC
+            } else {
+                throw new Error(parsed.error || 'Unknown error in TAC generation');
+            }
+        } catch (e: any) {
+            setError(e.message || String(e));
+            throw e;
+        } finally {
+            setCompiling(false);
+        }
+    }, [moduleRef]);
+
+    // Atualize o contexto para incluir a nova função
+    const value: CompilerContextValue = { ready, compiling, compile, compileTAC, error };
     return <CompilerContext.Provider value={value}>{children}</CompilerContext.Provider>;
 };
 

@@ -1,0 +1,244 @@
+/* TACTab.css */
+.tac-container {
+    background: white;
+    border-radius: 8px;
+    padding: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.tac-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+}
+
+.tac-title-section h3 {
+    margin: 0 0 8px 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.tac-description {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.tac-stats {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.tac-stats .stat {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    backdrop-filter: blur(10px);
+}
+
+/* Legenda Educativa */
+.tac-legend {
+    background: #f8f9fa;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.legend-title {
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.legend-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: #6c757d;
+    padding: 4px 8px;
+    background: white;
+    border-radius: 6px;
+    border-left: 3px solid var(--color);
+}
+
+.legend-icon {
+    font-weight: bold;
+}
+
+/* Informações Educativas */
+.tac-info {
+    padding: 15px 20px;
+    background: #f0f8ff;
+    border-bottom: 1px solid #e1f5fe;
+}
+
+.info-section {
+    margin-bottom: 12px;
+}
+
+.info-section:last-child {
+    margin-bottom: 0;
+}
+
+.info-section h4 {
+    margin: 0 0 6px 0;
+    color: #1976d2;
+    font-size: 0.9rem;
+}
+
+.info-section p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #546e7a;
+    line-height: 1.4;
+}
+
+/* Lista de Instruções */
+.tac-instructions {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 10px 0;
+}
+
+.tac-instruction {
+    padding: 8px 20px;
+    border-bottom: 1px solid #f1f3f4;
+    transition: background-color 0.2s ease;
+}
+
+.tac-instruction:hover {
+    background-color: #f8f9fa;
+}
+
+.tac-instruction:last-child {
+    border-bottom: none;
+}
+
+.instruction-line {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.line-number {
+    color: #6c757d;
+    font-size: 0.85rem;
+    min-width: 30px;
+    text-align: right;
+    font-feature-settings: "tnum";
+    font-variant-numeric: tabular-nums;
+}
+
+.instruction-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.instruction-code {
+    font-family: 'Fira Code', 'Monaco', 'Cascadia Code', monospace;
+    font-size: 0.95rem;
+    color: #2d3748;
+    background: #f7fafc;
+    padding: 4px 8px;
+    border-radius: 4px;
+    flex: 1;
+}
+
+.instruction-hint {
+    margin-top: 4px;
+    margin-left: 66px;
+    font-size: 0.75rem;
+    color: #78909c;
+    font-style: italic;
+}
+
+/* Resumo Final */
+.tac-summary {
+    padding: 15px 20px;
+    background: #f1f8e9;
+    border-top: 1px solid #e8f5e8;
+}
+
+.tac-summary h4 {
+    margin: 0 0 12px 0;
+    color: #388e3c;
+    font-size: 0.95rem;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+}
+
+.summary-label {
+    font-size: 0.8rem;
+    color: #546e7a;
+}
+
+.summary-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #2e7d32;
+}
+
+.tac-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+/* Scrollbar personalizada */
+.tac-instructions::-webkit-scrollbar {
+    width: 6px;
+}
+
+.tac-instructions::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.tac-instructions::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.tac-instructions::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+/* No CSS, poderia destacar a linha da operação */
+.instruction-line.binary-op {
+    background-color: #e3f2fd;
+    border-left: 3px solid #2196F3;
+}

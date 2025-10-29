@@ -11,6 +11,11 @@ string TACGenerator::new_temp()
     return "t" + to_string(temp_counter++);
 }
 
+string TACGenerator::new_label()
+{
+    return "L" + to_string(label_counter++);
+}
+
 vector<TACInstruction> TACGenerator::generate(ProgramNode *program)
 {
     instructions.clear();
@@ -32,8 +37,6 @@ vector<TACInstruction> TACGenerator::generate(ProgramNode *program)
         else if (auto par = dynamic_cast<ParNode *>(stmt.get()))
         {
             // Para PAR, processamos todos os SEQ em paralelo
-            // Em um compilador real, isso geraria código para threads
-            // Por enquanto, vamos processar sequencialmente
             for (auto &par_stmt : par->statements)
             {
                 if (auto seq = dynamic_cast<SeqNode *>(par_stmt.get()))
@@ -51,38 +54,6 @@ vector<TACInstruction> TACGenerator::generate(ProgramNode *program)
         }
     }
 
-    cout << "=== TAC DEBUG ===" << endl;
-    for (const auto &instr : instructions)
-    {
-        if (instr.op == "print")
-        {
-            cout << "print " << instr.arg1 << endl;
-        }
-        else if (instr.op.empty())
-        {
-            cout << instr.result << " = " << instr.arg1 << endl;
-        }
-        else if (instr.op == "label")
-        {
-            cout << instr.result << ":" << endl;
-        }
-        else if (instr.op == "if_false")
-        {
-            cout << "if_false " << instr.arg1 << " goto " << instr.arg2 << endl;
-        }
-        else if (instr.op == "goto")
-        {
-            cout << "goto " << instr.arg2 << endl;
-        }
-        else
-        {
-            cout << instr.result << " = " << instr.arg1 << " " << instr.op << " " << instr.arg2 << endl;
-        }
-    }
-    cout << "=================" << endl;
-
-    return instructions;
-
     return instructions;
 }
 
@@ -94,25 +65,26 @@ void TACGenerator::generate_statement(ASTNode *stmt)
     if (auto assignment = dynamic_cast<AssignmentNode *>(stmt))
     {
         string temp = generate_expression(assignment->expression.get());
-        instructions.push_back(TACInstruction(assignment->identifier, temp));
+        instructions.push_back(TACInstruction(assignment->identifier, "=", temp));
     }
     else if (auto print_node = dynamic_cast<PrintNode *>(stmt))
     {
         string temp = generate_expression(print_node->expression.get());
-        instructions.push_back(TACInstruction("", temp, "print"));
+        instructions.push_back(TACInstruction("", "print", temp));
     }
     else if (auto while_node = dynamic_cast<WhileNode *>(stmt))
     {
-        // Gerar labels para o loop
-        string start_label = "L" + to_string(label_counter++);
-        string end_label = "L" + to_string(label_counter++);
+        string start_label = new_label();
+        string end_label = new_label();
 
         // Label de início do loop
-        instructions.push_back(TACInstruction(start_label, "", "label"));
+        instructions.push_back(TACInstruction(start_label, "label", ""));
 
-        // Gerar condição - CORRIGIDO: usar generate_expression
+        // Gerar condição
         string cond_temp = generate_expression(while_node->condition.get());
-        instructions.push_back(TACInstruction("", cond_temp, "if_false", end_label));
+        
+        // if_false cond_temp goto end_label
+        instructions.push_back(TACInstruction("", "if_false", cond_temp, end_label));
 
         // Gerar corpo do while
         if (auto body_seq = dynamic_cast<SeqNode *>(while_node->body.get()))
@@ -127,12 +99,13 @@ void TACGenerator::generate_statement(ASTNode *stmt)
             generate_statement(while_node->body.get());
         }
 
-        // Jump de volta para o início
-        instructions.push_back(TACInstruction("", "", "goto", start_label));
+        // goto start_label
+        instructions.push_back(TACInstruction("", "goto", start_label));
 
         // Label de fim do loop
-        instructions.push_back(TACInstruction(end_label, "", "label"));
+        instructions.push_back(TACInstruction(end_label, "label", ""));
     }
+    // REMOVA a parte do IfNode por enquanto - vamos implementar depois
 }
 
 string TACGenerator::generate_expression(ASTNode *node)
@@ -142,7 +115,10 @@ string TACGenerator::generate_expression(ASTNode *node)
 
     if (auto num = dynamic_cast<NumberNode *>(node))
     {
-        return to_string(num->value);
+        // Para números, criar temporário: t0 = 10
+        string temp = new_temp();
+        instructions.push_back(TACInstruction(temp, "=", to_string(num->value)));
+        return temp;
     }
     else if (auto id = dynamic_cast<IdentifierNode *>(node))
     {
@@ -192,16 +168,16 @@ string TACGenerator::generate_expression(ASTNode *node)
             break;
         }
 
-        instructions.push_back(TACInstruction(temp, left, op, right));
+        instructions.push_back(TACInstruction(temp, op, left, right));
         return temp;
     }
+    // REMOVA a parte do UnaryOpNode por enquanto
 
     return "error";
 }
 
 void TACGenerator::print_tac(std::ostream &out)
 {
-    out << "=== TAC DEBUG ===\n";
     for (const auto &instr : instructions)
     {
         if (instr.op == "print")
@@ -218,18 +194,18 @@ void TACGenerator::print_tac(std::ostream &out)
         }
         else if (instr.op == "goto")
         {
-            out << "goto " << instr.arg2 << "\n";
+            out << "goto " << instr.arg1 << "\n";
         }
-        else if (instr.op.empty())
+        else if (instr.op == "=")
         {
             out << instr.result << " = " << instr.arg1 << "\n";
         }
         else
         {
+            // Operações binárias: t0 = x + y
             out << instr.result << " = " << instr.arg1 << " " << instr.op << " " << instr.arg2 << "\n";
         }
     }
-    out << "=================\n";
 }
 
 void TACGenerator::print_tac()

@@ -33,17 +33,69 @@ export function extractTAC(raw: string): string {
     return extractSection(raw, '=== CÓDIGO DE TRÊS ENDEREÇOS ===', '=== CÓDIGO ASSEMBLY ARMv7 ===');
 }
 
+// buildArtifacts.ts - versão alternativa
 export function extractARM(raw: string): string {
-    return extractSection(raw, '=== CÓDIGO ASSEMBLY ARMv7 ===', '');
+    // Buscar por "=== CÓDIGO ASSEMBLY ARMv7 ==="
+    const armHeader = '=== CÓDIGO ASSEMBLY ARMv7 ===';
+    const startIndex = raw.indexOf(armHeader);
+    
+    if (startIndex === -1) return '';
+    
+    // Pegar tudo depois do header
+    const afterHeader = raw.substring(startIndex + armHeader.length);
+    
+    // Encontrar o próximo header ou fim do arquivo
+    const nextHeaders = [
+        '\n=== ', // Próxima seção
+        '\n\n',   // Fim das seções
+        '\n//',   // Comentários de debug
+    ];
+    
+    let endIndex = afterHeader.length;
+    for (const header of nextHeaders) {
+        const idx = afterHeader.indexOf(header);
+        if (idx !== -1 && idx < endIndex) {
+            endIndex = idx;
+        }
+    }
+    
+    let armCode = afterHeader.substring(0, endIndex).trim();
+    
+    // Limpar linhas de debug
+    armCode = armCode.split('\n')
+        .filter(line => {
+            return !line.includes('DEBUG -') && 
+                   !line.includes('linhas ARM geradas:') &&
+                   !line.startsWith('// Código ARM via');
+        })
+        .join('\n')
+        .trim();
+    
+    return armCode;
 }
 
+// buildArtifacts.ts - função atualizada
 export function buildArtifactsFromRaw(code: string, raw: string): CompilationArtifacts {
-    return {
-        rawOutput: raw,
-        tokens: extractTokens(raw),
-        syntaxTree: extractSyntaxTree(raw),
-        symbolTable: 'Tabela de símbolos em desenvolvimento...', 
-        tac: extractTAC(raw),
-        arm: extractARM(raw)
-    };
+    // Tenta parsear como JSON primeiro
+    try {
+        const jsonData = JSON.parse(raw);
+        return {
+            rawOutput: raw,
+            tokens: jsonData.tokens ? jsonData.tokens.map((t: any) => t.value) : [],
+            syntaxTree: jsonData.ast || '',
+            symbolTable: jsonData.symbols ? JSON.stringify(jsonData.symbols, null, 2) : '',
+            tac: jsonData.tac ? JSON.stringify(jsonData.tac, null, 2) : '', // TAC estruturado
+            arm: jsonData.arm ? jsonData.arm.join('\n') : ''
+        };
+    } catch {
+        // Fallback para o formato textual antigo
+        return {
+            rawOutput: raw,
+            tokens: extractTokens(raw),
+            syntaxTree: extractSyntaxTree(raw),
+            symbolTable: extractSection(raw, '=== TABELA DE SÍMBOLOS ===', '=== ÁRVORE SINTÁTICA ==='),
+            tac: extractTAC(raw),
+            arm: extractARM(raw)
+        };
+    }
 }

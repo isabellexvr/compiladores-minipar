@@ -1,0 +1,316 @@
+/* SymbolTableTab.css - Design Foderoso Caralhoso Brabo 🔥 */
+.symbol-table-container {
+  background: white;
+  border-radius: 8px;
+  padding: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+/* Header */
+.symbol-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+}
+
+.symbol-title-section h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.symbol-description {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.symbol-stats {
+  display: flex;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.symbol-stats .stat {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  backdrop-filter: blur(10px);
+}
+
+/* Legenda */
+.symbol-legend {
+  background: #f8f9fa;
+  padding: 15px 20px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.legend-title {
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #6c757d;
+  padding: 4px 8px;
+  background: white;
+  border-radius: 6px;
+  border-left: 3px solid var(--color);
+}
+
+.legend-icon {
+  font-weight: bold;
+}
+
+/* Informações */
+.symbol-info {
+  padding: 15px 20px;
+  background: #e3f2fd;
+  border-bottom: 1px solid #bbdefb;
+}
+
+.info-section h4 {
+  margin: 0 0 6px 0;
+  color: #1976d2;
+  font-size: 0.9rem;
+}
+
+.info-section p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #546e7a;
+  line-height: 1.4;
+}
+
+/* Wrapper da Tabela */
+.symbol-table-wrapper {
+  margin: 0;
+}
+
+.table-header {
+  background: #37474f;
+  color: white;
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.table-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.table-subtitle {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+/* Tabela */
+.symbol-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fafafa;
+  font-family: 'Fira Code', 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+}
+
+.symbol-table thead th {
+  text-align: left;
+  font-weight: 600;
+  padding: 12px 16px;
+  background: #455a64;
+  color: white;
+  border-bottom: 2px solid #37474f;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.col-icon { width: 60px; }
+.col-name { width: 25%; }
+.col-type { width: 20%; }
+.col-scope { width: 20%; }
+.col-value { width: 35%; }
+
+.symbol-table tbody tr {
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.symbol-table tbody tr:hover {
+  background-color: #f1f8e9;
+}
+
+.symbol-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.symbol-table td {
+  padding: 12px 16px;
+  vertical-align: middle;
+}
+
+/* Células Específicas */
+.symbol-icon-cell {
+  text-align: center;
+}
+
+.symbol-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.symbol-name code {
+  background: #f5f5f5;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: 'Fira Code', monospace;
+  color: #2e7d32;
+  font-weight: 500;
+}
+
+.type-badge, .scope-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.symbol-value .value-code {
+  background: #fff3e0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: 'Fira Code', monospace;
+  color: #e65100;
+  font-weight: 500;
+}
+
+.value-empty {
+  color: #bdbdbd;
+  font-style: italic;
+}
+
+/* Resumo */
+.symbol-summary {
+  padding: 15px 20px;
+  background: #f1f8e9;
+  border-top: 1px solid #e8f5e8;
+}
+
+.symbol-summary h4 {
+  margin: 0 0 12px 0;
+  color: #2e7d32;
+  font-size: 0.95rem;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.summary-label {
+  font-size: 0.8rem;
+  color: #455a64;
+}
+
+.summary-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1b5e20;
+}
+
+/* Estado Vazio */
+.symbol-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6c757d;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+/* Scrollbar */
+.symbol-table-wrapper {
+  max-height: 400px;
+  overflow: auto;
+}
+
+.symbol-table-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.symbol-table-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.symbol-table-wrapper::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.symbol-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .symbol-table {
+    font-size: 0.75rem;
+  }
+  
+  .symbol-table td {
+    padding: 8px 12px;
+  }
+  
+  .col-icon { width: 50px; }
+  .col-name { width: 30%; }
+  .col-type { width: 25%; }
+  .col-scope { width: 25%; }
+  .col-value { width: 20%; }
+  
+  .legend-items {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -102,7 +102,8 @@ string ARMGenerator::get_register(const string& var) {
     return var_registers[var];
 }
 
-void ARMGenerator::print_arm() {
-    for (const auto &line : arm_code)
-        cout << line << endl;
+void ARMGenerator::print_arm(std::ostream& out) {
+    for (const auto &line : arm_code) {
+        out << line << std::endl;
+    }
 }

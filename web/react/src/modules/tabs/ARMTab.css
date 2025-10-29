@@ -1,0 +1,284 @@
+/* ARMTab.css */
+.arm-container {
+    background: white;
+    border-radius: 8px;
+    padding: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.arm-header {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    color: white;
+    padding: 20px;
+}
+
+.arm-title-section h3 {
+    margin: 0 0 8px 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.arm-description {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.arm-stats {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.arm-stats .stat {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    backdrop-filter: blur(10px);
+}
+
+/* Legenda */
+.arm-legend {
+    background: #fff3e0;
+    padding: 15px 20px;
+    border-bottom: 1px solid #ffe0b2;
+}
+
+.legend-title {
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #e65100;
+    font-size: 0.9rem;
+}
+
+.legend-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: #bf360c;
+    padding: 4px 8px;
+    background: white;
+    border-radius: 6px;
+    border-left: 3px solid var(--color);
+}
+
+.legend-icon {
+    font-weight: bold;
+}
+
+/* Informações */
+.arm-info {
+    padding: 15px 20px;
+    background: #fbe9e7;
+    border-bottom: 1px solid #ffccbc;
+}
+
+.info-section {
+    margin-bottom: 12px;
+}
+
+.info-section:last-child {
+    margin-bottom: 0;
+}
+
+.info-section h4 {
+    margin: 0 0 6px 0;
+    color: #d84315;
+    font-size: 0.9rem;
+}
+
+.info-section p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #5d4037;
+    line-height: 1.4;
+}
+
+.info-section code {
+    background: rgba(255, 255, 255, 0.7);
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.8rem;
+}
+
+/* Container do Código */
+.arm-code-container {
+    margin: 0;
+}
+
+.arm-code-header {
+    background: #37474f;
+    color: white;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.code-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.code-subtitle {
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+.arm-code {
+    max-height: 500px;
+    overflow-y: auto;
+    background: #263238;
+    color: #eceff1;
+}
+
+.arm-line {
+    display: flex;
+    align-items: center;
+    padding: 8px 20px;
+    border-bottom: 1px solid #37474f;
+    transition: background-color 0.2s ease;
+    font-family: 'Fira Code', 'Monaco', 'Cascadia Code', monospace;
+    font-size: 0.9rem;
+}
+
+.arm-line:hover {
+    background-color: #37474f;
+}
+
+.arm-line:last-child {
+    border-bottom: none;
+}
+
+.line-number {
+    color: #78909c;
+    font-size: 0.8rem;
+    min-width: 40px;
+    text-align: right;
+    font-feature-settings: "tnum";
+    font-variant-numeric: tabular-nums;
+}
+
+.line-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: bold;
+    flex-shrink: 0;
+    margin: 0 12px;
+}
+
+.line-code {
+    flex: 1;
+    color: #e3f2fd;
+    padding: 2px 0;
+}
+
+.line-type {
+    font-size: 0.75rem;
+    color: #90a4ae;
+    min-width: 120px;
+    text-align: right;
+    font-style: italic;
+}
+
+/* Resumo */
+.arm-summary {
+    padding: 15px 20px;
+    background: #e8f5e8;
+    border-top: 1px solid #c8e6c9;
+}
+
+.arm-summary h4 {
+    margin: 0 0 12px 0;
+    color: #2e7d32;
+    font-size: 0.95rem;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+}
+
+.summary-label {
+    font-size: 0.8rem;
+    color: #455a64;
+}
+
+.summary-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #1b5e20;
+}
+
+.execution-note {
+    font-size: 0.8rem;
+    color: #388e3c;
+    text-align: center;
+    padding: 8px;
+    background: rgba(76, 175, 80, 0.1);
+    border-radius: 4px;
+}
+
+.arm-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+/* Scrollbar personalizada */
+.arm-code::-webkit-scrollbar {
+    width: 8px;
+}
+
+.arm-code::-webkit-scrollbar-track {
+    background: #37474f;
+}
+
+.arm-code::-webkit-scrollbar-thumb {
+    background: #546e7a;
+    border-radius: 4px;
+}
+
+.arm-code::-webkit-scrollbar-thumb:hover {
+    background: #78909c;
+}
+
+/* Destaques de sintaxe (opcional) */
+.line-code .directive { color: #ce93d8; }
+.line-code .label { color: #90caf9; }
+.line-code .instruction { color: #a5d6a7; }
+.line-code .register { color: #ffcc80; }
+.line-code .immediate { color: #ef9a9a; }
+.line-code .comment { color: #b0bec5; }
