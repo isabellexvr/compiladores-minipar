@@ -3,6 +3,7 @@
 #include <sstream>
 #include "lexer.h"
 #include "parser.h"
+#include "ast_printer.h"
 #include "tac_generator.h"
 #include "arm_generator.h"
 
@@ -35,7 +36,13 @@ int main(int argc, char* argv[]) {
     Lexer lexer(source_code);
     auto tokens = lexer.tokenize();
     
+    // Mostrar apenas alguns tokens para não poluir a saída
+    int count = 0;
     for (const auto& token : tokens) {
+        if (count++ > 20) {
+            cout << "... (mais tokens)" << endl;
+            break;
+        }
         cout << "Token: " << static_cast<int>(token.type) 
              << " Valor: '" << token.value << "'" 
              << " Linha: " << token.line << endl;
@@ -44,17 +51,27 @@ int main(int argc, char* argv[]) {
     cout << "\n=== ANALISADOR SINTÁTICO ===" << endl;
     Parser parser(tokens);
     auto ast = parser.parse();
-    cout << "AST gerada com sucesso!" << endl;
     
-    cout << "\n=== CÓDIGO DE TRÊS ENDEREÇOS ===" << endl;
-    TACGenerator tac_gen;
-    auto tac = tac_gen.generate(ast.get());
-    tac_gen.print_tac();
-    
-    cout << "\n=== CÓDIGO ASSEMBLY ARMv7 ===" << endl;
-    ARMGenerator arm_gen;
-    auto arm_code = arm_gen.generate(tac);
-    arm_gen.print_arm();
+    if (ast) {
+        cout << "AST gerada com sucesso!" << endl;
+        
+        // Imprimir AST
+        ASTPrinter printer;
+        cout << "\n=== ÁRVORE SINTÁTICA ===" << endl;
+        cout << printer.print(*ast) << endl;
+        
+        cout << "\n=== CÓDIGO DE TRÊS ENDEREÇOS ===" << endl;
+        TACGenerator tac_gen;
+        auto tac = tac_gen.generate(ast.get());
+        tac_gen.print_tac();
+        
+        cout << "\n=== CÓDIGO ASSEMBLY ARMv7 ===" << endl;
+        ARMGenerator arm_gen;
+        auto arm_code = arm_gen.generate(tac);
+        arm_gen.print_arm();
+    } else {
+        cout << "Erro na análise sintática!" << endl;
+    }
     
     return 0;
 }

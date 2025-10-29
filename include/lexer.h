@@ -5,41 +5,70 @@
 #include <vector>
 #include <unordered_map>
 
-enum class TokenType {
+enum TokenType
+{
     // Palavras-chave
-    SEQ, PAR, IF, ELSE, WHILE, PRINT, INPUT,
+    SEQ,
+    PAR,
+    IF,
+    ELSE,
+    WHILE,
+    PRINT,
+    INPUT,
     // Tipos
-    INT, BOOL, STRING, C_CHANNEL,
+    INT,
+    BOOL,
+    STRING,
+    C_CHANNEL,
     // Identificadores e literais
-    IDENTIFIER, NUMBER, STRING_LITERAL,
-    // Operadores
-    PLUS, MINUS, MULTIPLY, DIVIDE, ASSIGN,
-    // Comparação
-    EQUALS, NOT_EQUALS, LESS, GREATER, LESS_EQUAL, GREATER_EQUAL,
+    IDENTIFIER,
+    NUMBER,
+    STRING_LITERAL,
+    // Operadores aritméticos / atribuição
+    PLUS,
+    MINUS,
+    MULTIPLY,
+    DIVIDE,
+    ASSIGN, // =
+    // Operadores de comparação
+    EQUALS,        // ==
+    NOT_EQUALS,    // !=
+    LESS,          // <
+    LESS_EQUAL,    // <=
+    GREATER,       // >
+    GREATER_EQUAL, // >=
     // Delimitadores
-    LPAREN, RPAREN, LBRACE, RBRACE, SEMICOLON, COMMA,
+    LPAREN,
+    RPAREN,
+    LBRACE,
+    RBRACE,
+    SEMICOLON,
+    COMMA,
     // Comentário e fim
-    COMMENT, END_OF_FILE
+    COMMENT,
+    END_OF_FILE
 };
 
-struct Token {
+struct Token
+{
     TokenType type;
     std::string value;
     int line;
     int column;
-    
-    Token(TokenType t, const std::string& v, int l = 1, int c = 1) 
+
+    Token(TokenType t, const std::string &v, int l = 1, int c = 1)
         : type(t), value(v), line(l), column(c) {}
 };
 
-class Lexer {
+class Lexer
+{
 private:
     std::string source;
     size_t position;
     int line;
     int column;
     char current_char;
-    
+
     void advance();
     char peek();
     void skip_whitespace();
@@ -47,9 +76,9 @@ private:
     Token read_number();
     Token read_string();
     Token read_identifier();
-    
+
 public:
-    Lexer(const std::string& src);
+    Lexer(const std::string &src);
     std::vector<Token> tokenize();
 };
 

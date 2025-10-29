@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Zap, FileText, TreePine, Table, Binary, Cpu } from 'lucide-react';
 import { useCompiler } from '../compiler/CompilerContext';
 import { buildArtifactsFromRaw } from '../compiler/buildArtifacts';
 import type { CompilationArtifacts } from './ResultsView';
@@ -84,30 +85,30 @@ const Home: React.FC<HomeProps> = ({ code, onChange, onCompile }) => {
 
             <div className="info-section">
                 <div className="info-card">
-                    <h2 className="info-title">🚀 MINIPAR COMPILER</h2>
+                    <h2 className="info-title"><Zap size={20} className="icon accent" /> MINIPAR COMPILER</h2>
                     <p className="info-description">
                         Insira código na linguagem <span className="highlight">MiniPar</span> e compile para ver todo o processo de compilação em ação.
                     </p>
 
                     <div className="features-grid">
                         <div className="feature">
-                            <div className="feature-icon">📝</div>
+                            <FileText size={18} className="feature-icon" />
                             <div className="feature-text">Análise Léxica</div>
                         </div>
                         <div className="feature">
-                            <div className="feature-icon">🌳</div>
+                            <TreePine size={18} className="feature-icon" />
                             <div className="feature-text">Árvore Sintática</div>
                         </div>
                         <div className="feature">
-                            <div className="feature-icon">📊</div>
+                            <Table size={18} className="feature-icon" />
                             <div className="feature-text">Tabela de Símbolos</div>
                         </div>
                         <div className="feature">
-                            <div className="feature-icon">🔢</div>
+                            <Binary size={18} className="feature-icon" />
                             <div className="feature-text">Código 3 Endereços</div>
                         </div>
                         <div className="feature">
-                            <div className="feature-icon">⚙️</div>
+                            <Cpu size={18} className="feature-icon" />
                             <div className="feature-text">ARMv7 Assembly</div>
                         </div>
                     </div>
