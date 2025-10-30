@@ -184,9 +184,6 @@ print resultado
 3. `make -f Makefile.emscripten` para garantir sincronização wasm.
 4. Pull Request com descrição clara.
 
-## 🪪 Licença
-Definir (MIT recomendada). Adicione uma licença conforme orientação do professor.
-
 ## 💬 Contato
 Sugestões / dúvidas: abrir Issue ou falar com os participantes.
 
