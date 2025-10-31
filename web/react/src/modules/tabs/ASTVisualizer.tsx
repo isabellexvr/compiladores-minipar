@@ -37,9 +37,9 @@ const nodeTypes: NodeTypes = {
 };
 
 // Componente interno do Flow
-const FlowWrapper: React.FC<{ 
-  nodes: Node[]; 
-  edges: Edge[]; 
+const FlowWrapper: React.FC<{
+  nodes: Node[];
+  edges: Edge[];
   onNodesChange: any;
   onEdgesChange: any;
   onConnect: any;
@@ -49,7 +49,7 @@ const FlowWrapper: React.FC<{
 
   useLayoutEffect(() => {
     if (!flowRef.current) return;
-    
+
     const updateDimensions = () => {
       const rect = flowRef.current!.getBoundingClientRect();
       setDimensions({
@@ -59,16 +59,16 @@ const FlowWrapper: React.FC<{
     };
 
     updateDimensions();
-    
+
     const resizeObserver = new ResizeObserver(updateDimensions);
     resizeObserver.observe(flowRef.current);
-    
+
     return () => resizeObserver.disconnect();
   }, []);
 
   return (
-    <div 
-      ref={flowRef} 
+    <div
+      ref={flowRef}
       className="flow-container"
       style={{ width: '100%', height: '100%' }}
     >
@@ -90,7 +90,7 @@ const FlowWrapper: React.FC<{
             nodeColor={(node) => {
               const colors: { [key: string]: string } = {
                 'program': '#6366f1',
-                'seq': '#10b981', 
+                'seq': '#10b981',
                 'while': '#f59e0b',
                 'assignment': '#ef4444',
                 'binaryop': '#8b5cf6',
@@ -144,7 +144,7 @@ const ASTVisualizer: React.FC<ASTVisualizerProps> = ({ astString }) => {
       // ✅ CORREÇÃO: Contar espaços ANTES do trim()
       const leadingSpaces = originalLine.match(/^ */)?.[0].length || 0;
       const level = Math.floor(leadingSpaces / 2); // 2 espaços por nível
-      
+
       const content = originalLine.trim();
 
 
@@ -159,7 +159,7 @@ const ASTVisualizer: React.FC<ASTVisualizerProps> = ({ astString }) => {
         const colonIndex = content.indexOf(':');
         const type = content.substring(0, colonIndex).trim();
         const value = content.substring(colonIndex + 1).trim();
-        
+
         nodeType = type.toLowerCase().replace(/\s+/g, '-');
         label = value ? `${type}: ${value}` : type;
       } else {
@@ -171,12 +171,12 @@ const ASTVisualizer: React.FC<ASTVisualizerProps> = ({ astString }) => {
       const node: Node = {
         id: `node-${nodeId++}`,
         type: 'astNode',
-        position: { 
+        position: {
           x: level * 300, // Mais espaço para níveis mais profundos
-          y: currentY 
+          y: currentY
         },
-        data: { 
-          label, 
+        data: {
+          label,
           nodeType,
           originalContent: originalLine,
           level: level // Para debug
@@ -200,21 +200,21 @@ const ASTVisualizer: React.FC<ASTVisualizerProps> = ({ astString }) => {
           sourceHandle: 'output',
           targetHandle: 'input',
           type: 'smoothstep',
-          style: { 
+          style: {
             stroke: getEdgeColor(parent.node.data.nodeType),
-            strokeWidth: 2 
+            strokeWidth: 2
           },
         });
-        
-        
-  } else {
-        
+
+
+      } else {
+
       }
 
       stack.push({ node, level });
     });
 
-    
+
 
     setNodes(newNodes);
     setEdges(newEdges);
@@ -240,7 +240,7 @@ const ASTVisualizer: React.FC<ASTVisualizerProps> = ({ astString }) => {
   React.useEffect(() => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       parseASTToFlow(astString);
     } catch (err) {
@@ -261,7 +261,7 @@ const ASTVisualizer: React.FC<ASTVisualizerProps> = ({ astString }) => {
           <span className="edge-count">{edges.length} connections</span>
         </div>
         <div className="visualizer-controls">
-          <button 
+          <button
             onClick={() => {
               parseASTToFlow(astString);
             }}

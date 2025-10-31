@@ -5,4 +5,6 @@
 #include "lexer.h"
 // Constrói array de tokens em JSON. Se categorized=true usa categorias textuais, caso contrário enum numérico.
 void build_tokens_array(std::stringstream &json, const std::vector<Token> &tokens, bool categorized);
+// Versão que envia apenas tokens únicos (primeira ocorrência) pelo par (type,value).
+void build_tokens_array_unique(std::stringstream &json, const std::vector<Token> &tokens, bool categorized);
 #endif

@@ -152,6 +152,7 @@ export function buildArtifactsFromRaw(code: string, raw: string): CompilationArt
         const jsonData = JSON.parse(raw);
         
         console.log('✅ Usando novo formato JSON');
+        console.log("jsonData: ", jsonData);
         
         const tokens = jsonData.phases?.lexical?.tokens || [];
         

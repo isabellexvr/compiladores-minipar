@@ -347,7 +347,7 @@ char *compile_minipar(const char *source_code)
 
     auto build_lexical = [&](stringstream &json, const vector<Token> &tokens)
     {
-        json << "\"lexical\":{\"tokens\":"; build_tokens_array(json, tokens, true); json << "}"; };
+        json << "\"lexical\":{\"tokens\":"; build_tokens_array_unique(json, tokens, true); json << "}"; };
 
     auto build_syntax = [&](stringstream &json, ASTNode *ast)
     {
@@ -561,7 +561,8 @@ char *compile_minipar_json(const char *source_code)
         auto tokens = lexer.tokenize();
 
         json_result << "\"tokens\":";
-        build_tokens_array(json_result, tokens, false);
+        // Usa versão única para evitar repetições
+        build_tokens_array_unique(json_result, tokens, false);
         json_result << ",";
 
         // 2. Análise Sintática
