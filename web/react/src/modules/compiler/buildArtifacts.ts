@@ -146,19 +146,19 @@ export function extractProgramOutput(raw: string): string {
     return output;
 }
 
+// buildArtifacts.tsx - na função buildArtifactsFromRaw
 export function buildArtifactsFromRaw(code: string, raw: string): CompilationArtifacts {
-    // Tenta parsear como JSON primeiro
     try {
         const jsonData = JSON.parse(raw);
-        console.log("json data: ", jsonData);
         
-        // ✅ EXTRAIR TOKENS DA NOVA ESTRUTURA
+        console.log('✅ Usando novo formato JSON');
+        
         const tokens = jsonData.phases?.lexical?.tokens || [];
         
         return {
             rawOutput: raw,
-            tokens: tokens, // ✅ Agora já vem estruturado
-            syntaxTree: jsonData.phases?.syntax?.ast || '',
+            tokens: tokens,
+            syntaxTree: jsonData.phases?.syntax?.ast || '', // ✅ Já vem formatada
             symbolTable: jsonData.phases?.semantic?.symbols ? 
                 JSON.stringify(jsonData.phases.semantic.symbols, null, 2) : '',
             tac: jsonData.phases?.intermediate?.tac ? 
@@ -167,12 +167,13 @@ export function buildArtifactsFromRaw(code: string, raw: string): CompilationArt
                 jsonData.phases.codegen.code.join('\n') : '',
             output: jsonData.execution?.output || ''
         };
-    } catch {
-        // Fallback para o formato textual antigo (mantenha igual)
+    } catch (jsonError) {
+        console.log('⚠️ Usando formato textual (fallback)');
+        
         return {
             rawOutput: raw,
-            tokens: extractTokens(raw), // Isso ainda retorna string[], mas vamos remover depois
-            syntaxTree: extractSyntaxTree(raw),
+            tokens: extractTokens(raw),
+            syntaxTree: extractSyntaxTree(raw), // ✅ Fallback para formato textual
             symbolTable: extractSection(raw, '=== TABELA DE SÍMBOLOS ===', '=== ÁRVORE SINTÁTICA ==='),
             tac: extractTAC(raw),
             arm: extractARM(raw),
