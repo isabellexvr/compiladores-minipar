@@ -242,3 +242,64 @@
     background-color: #e3f2fd;
     border-left: 3px solid #2196F3;
 }
+
+/* TACTab.css - ADICIONAR ESTAS REGRAS */
+
+.temporary-badge {
+    margin-left: 8px;
+    font-size: 0.7rem;
+    opacity: 0.7;
+    cursor: help;
+}
+
+.tac-instruction.temporary {
+    background-color: #f0f9ff;
+    border-left: 3px solid #0ea5e9;
+}
+
+/* Melhorar visualização das instruções */
+.instruction-line {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+}
+
+.line-number {
+    color: #6c757d;
+    font-size: 0.85rem;
+    min-width: 30px;
+    text-align: right;
+    font-feature-settings: "tnum";
+    font-variant-numeric: tabular-nums;
+}
+
+.instruction-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.instruction-code {
+    font-family: 'Fira Code', 'Monaco', 'Cascadia Code', monospace;
+    font-size: 0.95rem;
+    color: #2d3748;
+    background: #f7fafc;
+    padding: 4px 8px;
+    border-radius: 4px;
+    flex: 1;
+}
+
+/* Grid de resumo mais responsivo */
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 8px;
+}

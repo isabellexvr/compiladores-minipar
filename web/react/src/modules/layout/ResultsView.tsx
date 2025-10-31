@@ -23,12 +23,22 @@ export interface SymbolEntry {
   value?: string; // Opcional
 }
 
+export interface TACInstruction {
+    id?: number; // ✅ Adicionar id do JSON
+    result: string;
+    op: string;
+    arg1: string;
+    arg2: string;
+    type: string;
+    isTemporary?: boolean; // ✅ Nova propriedade do JSON
+}
+
 export interface CompilationArtifacts {
     rawOutput: string;
     tokens: Token[];
     syntaxTree?: string;
     symbolTable?: SymbolEntry[];
-    tac?: string;
+    tac?: TACInstruction[];
     arm?: string;
     output?: string;
 }
@@ -83,10 +93,11 @@ const ResultsView: React.FC<ResultsViewProps> = ({ code, artifacts, onBack }) =>
                 return <SymbolTableTab table={artifacts.symbolTable} />;
             }
 
+        // ResultsView.tsx - na função renderTabContent
             case 'tac':
                 return artifacts.tac ? (
                     <TACTab 
-                        instructions={parseTACFromText(artifacts.tac)}
+                        instructions={artifacts.tac} // ✅ AGORA já é TACInstruction[]
                         className="tac-tab"
                     />
                 ) : (

@@ -15,23 +15,23 @@ function extractSection(raw: string, start: string, end: string): string {
 // buildArtifacts.tsx - função extractTokens atualizada
 export function extractTokens(raw: string): Token[] {
     const tokenLines = extractSection(raw, '=== ANALISADOR LÉXICO ===', '=== ANALISADOR SINTÁTICO ===')
-    .split('\n')
-    .map(line => line.trim())
-    .filter(line => line.startsWith('Token:'));
-    
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.startsWith('Token:'));
+
     // ✅ AGORA retorna Token[] em vez de string[]
     console.log("raw: ", raw);
     return tokenLines.map(line => {
         const tokenMatch = line.match(/Token:\s*(\d+)\s*Valor:\s*'([^']*)'\s*Linha:\s*(\d+)/);
         if (tokenMatch) {
             const [, typeNum, value, lineNum] = tokenMatch;
-            
+
             // Converter o tipo numérico para string descritiva
             let type = 'UNKNOWN';
             const typeInt = parseInt(typeNum);
-            
+
             // Mapeamento baseado nos tipos do seu lexer
-            switch(typeInt) {
+            switch (typeInt) {
                 case 0: type = 'KEYWORD'; break;      // SEQ
                 case 4: type = 'KEYWORD'; break;      // while
                 case 5: type = 'KEYWORD'; break;      // print
@@ -54,7 +54,7 @@ export function extractTokens(raw: string): Token[] {
                 column: 1 // ✅ Coluna padrão para fallback
             };
         }
-        
+
         // Fallback para linha mal formatada
         return {
             type: 'UNKNOWN',
@@ -69,22 +69,22 @@ export function extractTokens(raw: string): Token[] {
 // buildArtifacts.tsx - adicionar função para fallback
 export function extractSymbolTable(raw: string): SymbolEntry[] {
     const symbolSection = extractSection(raw, '=== TABELA DE SÍMBOLOS ===', '=== ÁRVORE SINTÁTICA ===');
-    
+
     if (!symbolSection) return [];
-    
+
     const lines = symbolSection.split('\n')
         .map(line => line.trim())
         .filter(line => line.length > 0 && !line.includes('---')); // Remover linhas de separador
-    
+
     console.log('📊 Linhas da tabela de símbolos:', lines);
-    
+
     const symbols: SymbolEntry[] = [];
-    
+
     // Pular cabeçalho e processar linhas de dados
     for (let i = 2; i < lines.length; i++) { // Pular "Nome | TipoSimbolo | TipoDado" e "---"
         const line = lines[i];
         const parts = line.split('|').map(part => part.trim());
-        
+
         if (parts.length >= 3) {
             symbols.push({
                 name: parts[0] || '',
@@ -94,7 +94,7 @@ export function extractSymbolTable(raw: string): SymbolEntry[] {
             });
         }
     }
-    
+
     console.log('📋 Símbolos extraídos:', symbols);
     return symbols;
 }
@@ -108,17 +108,17 @@ export function extractTAC(raw: string): string {
 export function extractARM(raw: string): string {
     const armHeader = '=== CÓDIGO ASSEMBLY ARMv7 ===';
     const startIndex = raw.indexOf(armHeader);
-    
+
     if (startIndex === -1) return '';
-    
+
     const afterHeader = raw.substring(startIndex + armHeader.length);
-    
+
     const nextHeaders = [
         '\n=== ', // Próxima seção
         '\n\n',   // Fim das seções
         '\n//',   // Comentários de debug
     ];
-    
+
     let endIndex = afterHeader.length;
     for (const header of nextHeaders) {
         const idx = afterHeader.indexOf(header);
@@ -126,18 +126,18 @@ export function extractARM(raw: string): string {
             endIndex = idx;
         }
     }
-    
+
     let armCode = afterHeader.substring(0, endIndex).trim();
-    
+
     armCode = armCode.split('\n')
         .filter(line => {
-            return !line.includes('DEBUG -') && 
-                   !line.includes('linhas ARM geradas:') &&
-                   !line.startsWith('// Código ARM via');
+            return !line.includes('DEBUG -') &&
+                !line.includes('linhas ARM geradas:') &&
+                !line.startsWith('// Código ARM via');
         })
         .join('\n')
         .trim();
-    
+
     return armCode;
 }
 
@@ -145,17 +145,17 @@ export function extractARM(raw: string): string {
 export function extractProgramOutput(raw: string): string {
     const outputHeader = '=== PROGRAM OUTPUT ===';
     const startIndex = raw.indexOf(outputHeader);
-    
+
     if (startIndex === -1) return '';
-    
+
     const afterHeader = raw.substring(startIndex + outputHeader.length);
-    
+
     // Encontrar o próximo header ou fim do arquivo
     const nextHeaders = [
         '\n=== ', // Próxima seção (caso tenha mais coisas depois)
         '\n\n',   // Fim das seções
     ];
-    
+
     let endIndex = afterHeader.length;
     for (const header of nextHeaders) {
         const idx = afterHeader.indexOf(header);
@@ -163,53 +163,36 @@ export function extractProgramOutput(raw: string): string {
             endIndex = idx;
         }
     }
-    
+
     let output = afterHeader.substring(0, endIndex).trim();
-    
+
     // Limpar possíveis linhas vazias no início/fim
     output = output.split('\n')
         .map(line => line.trim())
         .filter(line => line.length > 0)
         .join('\n');
-    
+
     return output;
 }
 
 // buildArtifacts.tsx - na função buildArtifactsFromRaw
 // buildArtifacts.tsx - na função buildArtifactsFromRaw
+// buildArtifacts.tsx - na função buildArtifactsFromRaw
 export function buildArtifactsFromRaw(code: string, raw: string): CompilationArtifacts {
-    try {
-        const jsonData = JSON.parse(raw);
-        
-        console.log('✅ Usando novo formato JSON');
-        
-        const tokens = jsonData.phases?.lexical?.tokens || [];
-        
-        // ✅ EXTRAIR SYMBOL TABLE ESTRUTURADA
-        const symbols = jsonData.phases?.semantic?.symbols || [];
-        console.log('📋 Símbolos extraídos do JSON:', symbols);
-        
-        return {
-            rawOutput: raw,
-            tokens: tokens,
-            syntaxTree: jsonData.phases?.syntax?.ast || '',
-            symbolTable: symbols, // ✅ AGORA é um array, não string JSON
-            tac: jsonData.phases?.intermediate?.tac ? 
-                JSON.stringify(jsonData.phases.intermediate.tac, null, 2) : '',
-            arm: jsonData.phases?.codegen?.code ? 
-                jsonData.phases.codegen.code.join('\n') : '',
-            output: jsonData.execution?.output || ''
-        };
-    } catch (jsonError) {
-        console.log('⚠️ Usando formato textual (fallback)');
-        
-        return {
-            rawOutput: raw,
-            tokens: extractTokens(raw),
-            symbolTable: extractSymbolTable(raw), // ✅ Função atualizada para fallback
-            tac: extractTAC(raw),
-            arm: extractARM(raw),
-            output: extractProgramOutput(raw)
-        };
-    }
+    const jsonData = JSON.parse(raw); // Garantido que é JSON
+
+    const tokens = jsonData.phases?.lexical?.tokens || [];
+    const symbols = jsonData.phases?.semantic?.symbols || [];
+    const tac = jsonData.phases?.intermediate?.tac || [];
+    const armLines: string[] = jsonData.phases?.codegen?.code || [];
+
+    return {
+        rawOutput: raw,
+        tokens,
+        syntaxTree: jsonData.phases?.syntax?.ast || '',
+        symbolTable: symbols,
+        tac,
+        arm: armLines.join('\n'),
+        output: jsonData.execution?.output || ''
+    };
 }
