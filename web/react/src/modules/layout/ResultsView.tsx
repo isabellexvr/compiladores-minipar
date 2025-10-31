@@ -123,16 +123,19 @@ const ResultsView: React.FC<ResultsViewProps> = ({ code, artifacts, onBack }) =>
                     </div>
                 );
 
-            case 'output':
-                return artifacts.output ? (
-                    <OutputTab output={artifacts.output.split('\n')} />
-                ) : (
-                    <div className="placeholder-content">
-                        <div className="placeholder-icon">📺</div>
-                        <h3>No Program Output</h3>
-                        <p>The program output will appear here after execution.</p>
-                    </div>
-                );
+        case 'output':
+            return artifacts.output ? (
+                <OutputTab output={typeof artifacts.output === 'string' 
+                    ? artifacts.output.split('\n').filter(line => line.trim().length > 0)
+                    : artifacts.output
+                } />
+            ) : (
+                <div className="placeholder-content">
+                    <div className="placeholder-icon">📺</div>
+                    <h3>No Program Output</h3>
+                    <p>The program output will appear here after execution.</p>
+                </div>
+            );
 
             default:
                 return null;

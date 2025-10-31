@@ -1,0 +1,320 @@
+/* src/tabs/OutputTab.css */
+.output-tab {
+    background: #1a1a1a;
+    border-radius: 12px;
+    overflow: hidden;
+    font-family: 'Fira Code', 'Monaco', 'Cascadia Code', monospace;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    border: 1px solid #333;
+}
+
+/* Header do Terminal */
+.terminal-header {
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #4a5568;
+}
+
+.terminal-controls {
+    display: flex;
+    align-items: center;
+}
+
+.control-dots {
+    display: flex;
+    gap: 8px;
+}
+
+.control-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.control-dot.red { background: #ff5f57; }
+.control-dot.yellow { background: #ffbd2e; }
+.control-dot.green { background: #28ca42; }
+
+.control-dot:hover {
+    transform: scale(1.1);
+    filter: brightness(1.2);
+}
+
+.terminal-title {
+    color: #e2e8f0;
+    font-weight: 600;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+}
+
+.terminal-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: #a0aec0;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #48bb78;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Conteúdo do Terminal */
+.terminal-content {
+    background: #000;
+    color: #00ff00;
+    padding: 20px;
+    min-height: 300px;
+    max-height: 500px;
+    overflow-y: auto;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.output-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.output-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 0;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.prompt-line {
+    color: #63b3ed;
+    margin-bottom: 8px;
+}
+
+.prompt-symbol {
+    color: #48bb78;
+    font-weight: bold;
+}
+
+.prompt-text {
+    color: #e2e8f0;
+}
+
+.output-text {
+    color: #00ff00;
+    font-family: 'Fira Code', monospace;
+    word-break: break-all;
+}
+
+.status-line {
+    color: #a0aec0;
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px solid #2d3748;
+    font-style: italic;
+}
+
+.status-symbol {
+    color: #ed8936;
+}
+
+/* Estado sem output */
+.no-output {
+    text-align: center;
+    padding: 40px 20px;
+    color: #718096;
+}
+
+.no-output-icon {
+    font-size: 4rem;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.no-output h3 {
+    color: #a0aec0;
+    margin: 0 0 8px 0;
+    font-size: 1.2rem;
+}
+
+.no-output p {
+    margin: 0 0 20px 0;
+    font-size: 0.9rem;
+}
+
+.no-output-tips {
+    text-align: left;
+    background: #1a202c;
+    padding: 16px;
+    border-radius: 8px;
+    border-left: 4px solid #ed8936;
+}
+
+.no-output-tips strong {
+    color: #ed8936;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.no-output-tips ul {
+    margin: 0;
+    padding-left: 20px;
+    font-size: 0.85rem;
+}
+
+.no-output-tips li {
+    margin-bottom: 4px;
+    color: #cbd5e0;
+}
+
+.no-output-tips code {
+    background: #2d3748;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #81e6d9;
+    font-size: 0.8rem;
+}
+
+/* Footer do Terminal */
+.terminal-footer {
+    background: #2d3748;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #4a5568;
+}
+
+.footer-stats {
+    display: flex;
+    gap: 16px;
+    font-size: 0.8rem;
+    color: #a0aec0;
+}
+
+.footer-stats .stat {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.copy-btn {
+    background: #4299e1;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.copy-btn:hover:not(:disabled) {
+    background: #3182ce;
+    transform: translateY(-1px);
+}
+
+.copy-btn:disabled {
+    background: #4a5568;
+    color: #718096;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.copy-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+/* Scrollbar personalizada */
+.terminal-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.terminal-content::-webkit-scrollbar-track {
+    background: #1a1a1a;
+}
+
+.terminal-content::-webkit-scrollbar-thumb {
+    background: #4a5568;
+    border-radius: 4px;
+}
+
+.terminal-content::-webkit-scrollbar-thumb:hover {
+    background: #718096;
+}
+
+/* Efeitos de terminal */
+.terminal-content {
+    background: 
+        radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 40% 80%, rgba(120, 219, 255, 0.03) 0%, transparent 50%),
+        #000000;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .terminal-header {
+        padding: 10px 16px;
+    }
+    
+    .terminal-content {
+        padding: 16px;
+        font-size: 0.85rem;
+    }
+    
+    .terminal-footer {
+        padding: 10px 16px;
+        flex-direction: column;
+        gap: 8px;
+        align-items: stretch;
+    }
+    
+    .footer-stats {
+        justify-content: space-between;
+    }
+    
+    .no-output-tips {
+        padding: 12px;
+    }
+    
+    .no-output-tips ul {
+        padding-left: 16px;
+    }
+}
+
+/* Efeito de digitação (opcional) */
+.typing-effect {
+    overflow: hidden;
+    border-right: 2px solid #00ff00;
+    white-space: nowrap;
+    animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
+}
+
+@keyframes typing {
+    from { width: 0 }
+    to { width: 100% }
+}
+
+@keyframes blink-caret {
+    from, to { border-color: transparent }
+    50% { border-color: #00ff00 }
+}
