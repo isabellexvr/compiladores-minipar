@@ -102,7 +102,7 @@ const FlowWrapper: React.FC<{
             }}
             maskColor="rgba(0, 0, 0, 0.1)"
           />
-          <Background variant="dots" gap={25} size={1} />
+          <Background gap={25} size={1} />
         </ReactFlow>
       )}
     </div>
@@ -126,14 +126,12 @@ const ASTVisualizer: React.FC<ASTVisualizerProps> = ({ astString }) => {
       return;
     }
 
-    console.log('🌳 Parsing AST:', astStr);
 
     // ✅ CORREÇÃO: Manter os espaços originais para debug
     const lines = astStr
       .split('\n')
       .filter(line => line.trim().length > 0);
 
-    console.log('📝 Linhas com espaços originais:', lines);
 
     const newNodes: Node[] = [];
     const newEdges: Edge[] = [];
@@ -149,7 +147,6 @@ const ASTVisualizer: React.FC<ASTVisualizerProps> = ({ astString }) => {
       
       const content = originalLine.trim();
 
-      console.log(`📄 Linha: "${content}" | Espaços: ${leadingSpaces} | Nível: ${level} | Original: "${originalLine}"`);
 
       // Determinar tipo de nó
       let nodeType = 'default';
@@ -209,21 +206,15 @@ const ASTVisualizer: React.FC<ASTVisualizerProps> = ({ astString }) => {
           },
         });
         
-        console.log(`🔗 Conectando: ${parent.node.data.label} (nível ${parent.level}) -> ${node.data.label} (nível ${level})`);
-      } else {
-        console.log(`🏁 Nó raiz: ${node.data.label} (nível ${level})`);
+        
+  } else {
+        
       }
 
       stack.push({ node, level });
     });
 
-    console.log('📊 Nodes gerados:', newNodes.map(n => ({ 
-      label: n.data.label, 
-      level: n.data.level,
-      x: n.position.x,
-      y: n.position.y 
-    })));
-    console.log('🔗 Edges gerados:', newEdges);
+    
 
     setNodes(newNodes);
     setEdges(newEdges);
@@ -251,7 +242,6 @@ const ASTVisualizer: React.FC<ASTVisualizerProps> = ({ astString }) => {
     setError(null);
     
     try {
-      console.log('🔄 Iniciando parse da AST...');
       parseASTToFlow(astString);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Erro desconhecido';
@@ -273,7 +263,6 @@ const ASTVisualizer: React.FC<ASTVisualizerProps> = ({ astString }) => {
         <div className="visualizer-controls">
           <button 
             onClick={() => {
-              console.log('🔄 Refresh manual da AST');
               parseASTToFlow(astString);
             }}
             disabled={isLoading}
