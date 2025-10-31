@@ -20,7 +20,6 @@ const Home: React.FC<HomeProps> = ({ code, onChange, onCompile }) => {
         setLocalError(null);
         try {
             const raw = await compile(code);
-            console.log("RAW OUTPUT:", raw); // ← ADICIONE ESTA LINHA
             const artifacts = buildArtifactsFromRaw(code, raw);
             onCompile(artifacts);
         } catch (e: any) {

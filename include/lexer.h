@@ -31,8 +31,8 @@ enum TokenType
     DIVIDE,
     ASSIGN, // =
     // Operadores de comparação
-    EQUALS,        // ==
-    NOT_EQUALS,    // !=
+    EQUAL,        // ==
+    NOT_EQUAL,    // !=
     LESS,          // <
     LESS_EQUAL,    // <=
     GREATER,       // >
@@ -46,7 +46,7 @@ enum TokenType
     COMMA,
     // Comentário e fim
     COMMENT,
-    END_OF_FILE
+    END
 };
 
 struct Token

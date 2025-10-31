@@ -1,65 +1,24 @@
+// TokensTab.tsx - versão atualizada
 import React from 'react';
 import './TokensTab.css';
 
 interface Token {
     type: string;
     value: string;
-    line?: number;
-    column?: number;
+    line: number;
+    column: number;
 }
 
 interface TokensTabProps {
-    tokens: string[];
+    tokens: Token[]; // ✅ MUDOU: agora é Token[] em vez de string[]
     sourceCode?: string;
 }
 
 const TokensTab: React.FC<TokensTabProps> = ({ tokens, sourceCode }) => {
-    const extractTokensFromSource = (code: string): Token[] => {
-        const lines = code.split('\n');
-        const extracted: Token[] = [];
-        let lineNumber = 1;
+    console.log('Tokens recebidos:', tokens);
 
-        lines.forEach(line => {
-            const words = line
-                .split(/(\s+|\(|\)|;|,|\+|\-|\*|\/|=)/)
-                .filter(word => word.trim().length > 0);
-
-            words.forEach(word => {
-                const trimmed = word.trim();
-                if (!trimmed) return;
-
-                let type = 'UNKNOWN';
-                
-                if (['SEQ', 'PAR', 'print', 'if', 'else', 'while'].includes(trimmed)) {
-                    type = 'KEYWORD';
-                } else if (/^\d+$/.test(trimmed)) {
-                    type = 'NUMBER';
-                } else if (['+', '-', '*', '/'].includes(trimmed)) {
-                    type = 'OPERATOR';
-                } else if (trimmed === '=') {
-                    type = 'ASSIGN';
-                } else if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(trimmed)) {
-                    type = 'IDENTIFIER';
-                } else if (['(', ')', '{', '}', ';', ','].includes(trimmed)) {
-                    type = 'DELIMITER';
-                }
-
-                extracted.push({
-                    type,
-                    value: trimmed,
-                    line: lineNumber
-                });
-            });
-            
-            lineNumber++;
-        });
-
-        return extracted;
-    };
-
-    const parsedTokens: Token[] = sourceCode 
-        ? extractTokensFromSource(sourceCode)
-        : tokens.map(token => ({ type: 'UNKNOWN', value: token }));
+    // ✅ REMOVA a função extractTokensFromSource - não é mais necessária
+    // pois agora recebemos tokens já estruturados do backend
 
     const getTypeColor = (type: string): string => {
         const colors: { [key: string]: string } = {
@@ -67,8 +26,9 @@ const TokensTab: React.FC<TokensTabProps> = ({ tokens, sourceCode }) => {
             'IDENTIFIER': '#2196F3',  // Azul
             'NUMBER': '#4CAF50',      // Verde
             'OPERATOR': '#FF9800',    // Laranja
-            'ASSIGN': '#F44336',      // Vermelho
+            'ASSIGN': '#F44336',      // Vermelho - Note: no JSON virá como OPERATOR
             'DELIMITER': '#795548',   // Marrom
+            'END': '#607D8B',         // Cinza para END
             'UNKNOWN': '#607D8B'      // Cinza
         };
         return colors[type] || colors['UNKNOWN'];
@@ -82,6 +42,7 @@ const TokensTab: React.FC<TokensTabProps> = ({ tokens, sourceCode }) => {
             'OPERATOR': '⚡',
             'ASSIGN': '⇄',
             'DELIMITER': '📌',
+            'END': '🏁',
             'UNKNOWN': '❓'
         };
         return icons[type] || icons['UNKNOWN'];
@@ -92,20 +53,24 @@ const TokensTab: React.FC<TokensTabProps> = ({ tokens, sourceCode }) => {
             'KEYWORD': 'Palavra reservada da linguagem',
             'IDENTIFIER': 'Nome de variável ou função',
             'NUMBER': 'Literal numérico',
-            'OPERATOR': 'Operador matemático',
-            'ASSIGN': 'Operador de atribuição',
+            'OPERATOR': 'Operador matemático ou de atribuição',
             'DELIMITER': 'Delimitador estrutural',
+            'END': 'Fim do código',
             'UNKNOWN': 'Token não identificado'
         };
         return descriptions[type] || 'Tipo desconhecido';
     };
+
+    // ✅ Use os tokens diretamente, sem precisar fazer parsing
+    const parsedTokens: Token[] = tokens;
 
     const stats = {
         total: parsedTokens.length,
         types: new Set(parsedTokens.map(t => t.type)).size,
         keywords: parsedTokens.filter(t => t.type === 'KEYWORD').length,
         identifiers: parsedTokens.filter(t => t.type === 'IDENTIFIER').length,
-        numbers: parsedTokens.filter(t => t.type === 'NUMBER').length
+        numbers: parsedTokens.filter(t => t.type === 'NUMBER').length,
+        operators: parsedTokens.filter(t => t.type === 'OPERATOR').length
     };
 
     return (
@@ -115,7 +80,7 @@ const TokensTab: React.FC<TokensTabProps> = ({ tokens, sourceCode }) => {
                 <div className="tokens-title-section">
                     <h3>Token Analysis</h3>
                     <p className="tokens-description">
-                        Análise léxica - Tokens identificados no código fonte
+                        Análise léxica - {stats.total} tokens identificados no código fonte
                     </p>
                 </div>
                 <div className="tokens-stats">
@@ -125,7 +90,7 @@ const TokensTab: React.FC<TokensTabProps> = ({ tokens, sourceCode }) => {
                 </div>
             </div>
 
-            {/* Legenda */}
+            {/* Legenda Atualizada */}
             <div className="tokens-legend">
                 <div className="legend-title">Tipos de Tokens:</div>
                 <div className="legend-items">
@@ -141,20 +106,12 @@ const TokensTab: React.FC<TokensTabProps> = ({ tokens, sourceCode }) => {
                     <span className="legend-item" style={{ '--color': '#FF9800' } as any}>
                         <span className="legend-icon">⚡</span> Operator
                     </span>
-                    <span className="legend-item" style={{ '--color': '#F44336' } as any}>
-                        <span className="legend-icon">⇄</span> Assign
+                    <span className="legend-item" style={{ '--color': '#795548' } as any}>
+                        <span className="legend-icon">📌</span> Delimiter
                     </span>
-                </div>
-            </div>
-
-            {/* Informações */}
-            <div className="tokens-info">
-                <div className="info-section">
-                    <h4>🔍 Sobre a Análise Léxica:</h4>
-                    <p>
-                        A análise léxica é a primeira fase da compilação, onde o código fonte é dividido em tokens -
-                        as menores unidades significativas da linguagem de programação.
-                    </p>
+                    <span className="legend-item" style={{ '--color': '#607D8B' } as any}>
+                        <span className="legend-icon">🏁</span> End
+                    </span>
                 </div>
             </div>
 
@@ -174,6 +131,7 @@ const TokensTab: React.FC<TokensTabProps> = ({ tokens, sourceCode }) => {
                                     <th className="col-type">Tipo</th>
                                     <th className="col-value">Valor</th>
                                     <th className="col-line">Linha</th>
+                                    <th className="col-column">Coluna</th>
                                     <th className="col-description">Descrição</th>
                                 </tr>
                             </thead>
@@ -200,14 +158,13 @@ const TokensTab: React.FC<TokensTabProps> = ({ tokens, sourceCode }) => {
                                             </span>
                                         </td>
                                         <td className="token-value">
-                                            <code>{token.value}</code>
+                                            <code>{token.value || '(vazio)'}</code>
                                         </td>
                                         <td className="token-line">
-                                            {token.line ? (
-                                                <span className="line-badge">Linha {token.line}</span>
-                                            ) : (
-                                                <span className="line-empty">—</span>
-                                            )}
+                                            <span className="line-badge">Linha {token.line}</span>
+                                        </td>
+                                        <td className="token-column">
+                                            <span className="column-badge">Col {token.column}</span>
                                         </td>
                                         <td className="token-description">
                                             {getTypeDescription(token.type)}
@@ -226,7 +183,7 @@ const TokensTab: React.FC<TokensTabProps> = ({ tokens, sourceCode }) => {
                 </div>
             )}
 
-            {/* Resumo */}
+            {/* Resumo Atualizado */}
             <div className="tokens-summary">
                 <h4>📊 Resumo da Análise Léxica:</h4>
                 <div className="summary-grid">
@@ -249,6 +206,10 @@ const TokensTab: React.FC<TokensTabProps> = ({ tokens, sourceCode }) => {
                     <div className="summary-item">
                         <span className="summary-label">Números:</span>
                         <span className="summary-value">{stats.numbers}</span>
+                    </div>
+                    <div className="summary-item">
+                        <span className="summary-label">Operadores:</span>
+                        <span className="summary-value">{stats.operators}</span>
                     </div>
                 </div>
             </div>

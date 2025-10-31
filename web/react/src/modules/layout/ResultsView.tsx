@@ -5,15 +5,24 @@ import './ResultsView.css';
 import TACTab from '../tabs/TACTab';
 import SymbolTableTab from '../tabs/SymbolTableTab';
 import ARMTab from '../tabs/ARMTab';
+import OutputTab from '../tabs/OutputTab';
 import { parseTACFromText } from '../compiler/TACParser';
+
+export interface Token {
+    type: string;
+    value: string;
+    line: number;
+    column: number;
+}
 
 export interface CompilationArtifacts {
     rawOutput: string;
-    tokens: string[];
+    tokens: Token[];
     syntaxTree?: string;
     symbolTable?: string;
     tac?: string;
     arm?: string;
+    output?: string;
 }
 
 interface ResultsViewProps {
@@ -27,7 +36,8 @@ const tabs = [
     { id: 'syntax', label: 'Syntax Tree', icon: '🌳' },
     { id: 'symbols', label: 'Symbol Table', icon: '📊' },
     { id: 'tac', label: '3 Address Code', icon: '🔢' },
-    { id: 'arm', label: 'ARMv7 Assembly', icon: '⚙️' }
+    { id: 'arm', label: 'ARMv7 Assembly', icon: '⚙️' },
+    { id: 'output', label: 'Program Output', icon: '📺' } // NOVA ABA
 ];
 
 const ResultsView: React.FC<ResultsViewProps> = ({ code, artifacts, onBack }) => {
@@ -95,6 +105,17 @@ const ResultsView: React.FC<ResultsViewProps> = ({ code, artifacts, onBack }) =>
                         <div className="placeholder-icon">⚙️</div>
                         <h3>No ARM Assembly Available</h3>
                         <p>The ARMv7 assembly code will appear here after compilation.</p>
+                    </div>
+                );
+
+            case 'output':
+                return artifacts.output ? (
+                    <OutputTab output={artifacts.output.split('\n')} />
+                ) : (
+                    <div className="placeholder-content">
+                        <div className="placeholder-icon">📺</div>
+                        <h3>No Program Output</h3>
+                        <p>The program output will appear here after execution.</p>
                     </div>
                 );
 

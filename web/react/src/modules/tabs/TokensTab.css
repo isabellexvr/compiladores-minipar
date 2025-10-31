@@ -365,3 +365,23 @@
         flex-wrap: wrap;
     }
 }
+
+/* Adicione estas regras */
+
+.token-column {
+    text-align: center;
+    font-size: 0.8em;
+}
+
+.column-badge {
+    background: #e0e0e0;
+    color: #666;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.75em;
+}
+
+/* Ajuste as larguras das colunas se necessário */
+.col-column {
+    width: 80px;
+}
