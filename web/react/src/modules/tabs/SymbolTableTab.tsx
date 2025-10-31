@@ -1,33 +1,50 @@
+// SymbolTableTab.tsx - versão adaptada para o JSON
 import React from 'react';
 import './SymbolTableTab.css';
 
-interface SymbolEntry {
+interface SymbolEntryRaw {
   name: string;
-  type: string;
-  scope: string;
+  symbolType?: string; // frontend esperado
+  type?: string;       // backend legado
+  dataType?: string;
+  scope?: string;
   value?: string;
 }
 
 interface SymbolTableTabProps {
-  table: SymbolEntry[];
+  table: SymbolEntryRaw[];
 }
 
 const SymbolTableTab: React.FC<SymbolTableTabProps> = ({ table }) => {
-  const getSymbolColor = (type: string): string => {
-    switch (type.toUpperCase()) {
-      case 'VAR': return '#4CAF50';      // Verde - variáveis
-      case 'FUN': return '#2196F3';      // Azul - funções
-      case 'CHAN': return '#FF9800';     // Laranja - canais
-      case 'CONST': return '#9C27B0';    // Roxo - constantes
-      default: return '#607D8B';         // Cinza - outros
+  // Normaliza entradas vindas do backend ("type" -> "symbolType") e valores padrão
+  const norm = (table || []).map(e => ({
+    ...e,
+    symbolType: (e.symbolType || e.type || 'UNKNOWN').toString(),
+    dataType: e.dataType || '?',
+    scope: e.scope || 'global'
+  }));
+
+  const getSymbolColor = (symbolType: string): string => {
+    switch (symbolType.toUpperCase()) {
+      case 'VAR':
+      case 'VARIABLE': return '#4CAF50';      // Verde - variáveis
+      case 'FUN':
+      case 'FUNCTION': return '#2196F3';      // Azul - funções
+      case 'CHAN':
+      case 'CHANNEL': return '#FF9800';       // Laranja - canais
+      case 'CONST': return '#9C27B0';         // Roxo - constantes
+      default: return '#607D8B';              // Cinza - outros
     }
   };
 
-  const getSymbolIcon = (type: string): string => {
-    switch (type.toUpperCase()) {
-      case 'VAR': return '📦';
-      case 'FUN': return '⚡';
-      case 'CHAN': return '🔗';
+  const getSymbolIcon = (symbolType: string): string => {
+    switch (symbolType.toUpperCase()) {
+      case 'VAR':
+      case 'VARIABLE': return '📦';
+      case 'FUN':
+      case 'FUNCTION': return '⚡';
+      case 'CHAN':
+      case 'CHANNEL': return '🔗';
       case 'CONST': return '🔒';
       default: return '❓';
     }
@@ -35,22 +52,32 @@ const SymbolTableTab: React.FC<SymbolTableTabProps> = ({ table }) => {
 
   const getScopeColor = (scope: string): string => {
     switch (scope.toLowerCase()) {
-      case 'global': return '#F44336';    // Vermelho - global
-      case 'local': return '#FF9800';     // Laranja - local
-      case 'param': return '#2196F3';     // Azul - parâmetro
-      default: return '#607D8B';          // Cinza - outros
+      case 'global': return '#F44336';        // Vermelho - global
+      case 'local': return '#FF9800';         // Laranja - local
+      case 'param': return '#2196F3';         // Azul - parâmetro
+      default: return '#607D8B';              // Cinza - outros
     }
   };
 
+  // ✅ ESTATÍSTICAS ATUALIZADAS
   const stats = {
-    total: table.length,
-    variables: table.filter(s => s.type.toUpperCase() === 'VAR').length,
-    functions: table.filter(s => s.type.toUpperCase() === 'FUN').length,
-    channels: table.filter(s => s.type.toUpperCase() === 'CHAN').length,
-    globals: table.filter(s => s.scope.toLowerCase() === 'global').length
+    total: norm.length,
+    variables: norm.filter(s => {
+      const t = s.symbolType.toUpperCase();
+      return t === 'VAR' || t === 'VARIABLE';
+    }).length,
+    functions: norm.filter(s => {
+      const t = s.symbolType.toUpperCase();
+      return t === 'FUN' || t === 'FUNCTION';
+    }).length,
+    channels: norm.filter(s => {
+      const t = s.symbolType.toUpperCase();
+      return t === 'CHAN' || t === 'CHANNEL';
+    }).length,
+    globals: norm.filter(s => s.scope.toLowerCase() === 'global').length
   };
 
-  if (!table || table.length === 0) {
+  if (!norm || norm.length === 0) {
     return (
       <div className="symbol-table-container">
         <div className="symbol-empty">
@@ -103,8 +130,8 @@ const SymbolTableTab: React.FC<SymbolTableTabProps> = ({ table }) => {
         <div className="info-section">
           <h4>📋 Sobre a Tabela de Símbolos:</h4>
           <p>
-            A tabela de símbolos é gerada durante a análise semântica e contém informações 
-            sobre todos os identificadores do programa, incluindo tipo, escopo e valor.
+            A tabela de símbolos é gerada durante a análise semântica e contém informações
+            sobre todos os identificadores do programa, incluindo tipo, escopo e tipo de dado.
           </p>
         </div>
       </div>
@@ -120,47 +147,43 @@ const SymbolTableTab: React.FC<SymbolTableTabProps> = ({ table }) => {
             <tr>
               <th className="col-icon"></th>
               <th className="col-name">Nome</th>
-              <th className="col-type">Tipo</th>
+              <th className="col-type">Tipo Símbolo</th>
+              <th className="col-datatype">Tipo Dado</th>
               <th className="col-scope">Escopo</th>
-              <th className="col-value">Valor</th>
             </tr>
           </thead>
           <tbody>
-            {table.map((entry, idx) => (
+            {norm.map((entry, idx) => (
               <tr key={idx} className="symbol-row">
                 <td className="symbol-icon-cell">
-                  <span 
+                  <span
                     className="symbol-icon"
-                    style={{ backgroundColor: getSymbolColor(entry.type) }}
+                    style={{ backgroundColor: getSymbolColor(entry.symbolType) }}
                   >
-                    {getSymbolIcon(entry.type)}
+                    {getSymbolIcon(entry.symbolType)}
                   </span>
                 </td>
                 <td className="symbol-name">
                   <code>{entry.name}</code>
                 </td>
                 <td className="symbol-type">
-                  <span 
+                  <span
                     className="type-badge"
-                    style={{ backgroundColor: getSymbolColor(entry.type) }}
+                    style={{ backgroundColor: getSymbolColor(entry.symbolType) }}
                   >
-                    {entry.type}
+                    {entry.symbolType}
                   </span>
                 </td>
+                <td className="symbol-datatype">
+                  <code className="datatype-code">{entry.dataType}</code>
+                </td>
                 <td className="symbol-scope">
-                  <span 
+                  <span
                     className="scope-badge"
                     style={{ backgroundColor: getScopeColor(entry.scope) }}
                   >
                     {entry.scope}
                   </span>
-                </td>
-                <td className="symbol-value">
-                  {entry.value ? (
-                    <code className="value-code">{entry.value}</code>
-                  ) : (
-                    <span className="value-empty">—</span>
-                  )}
                 </td>
               </tr>
             ))}

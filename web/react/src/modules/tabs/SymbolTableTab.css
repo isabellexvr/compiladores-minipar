@@ -314,3 +314,25 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* SymbolTableTab.css - ADICIONAR ESTAS REGRAS */
+
+.col-datatype { 
+  width: 20%; 
+}
+
+.symbol-datatype .datatype-code {
+  background: #e3f2fd;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: 'Fira Code', monospace;
+  color: #1565c0;
+  font-weight: 500;
+  font-size: 0.8rem;
+}
+
+/* Ajustar outras larguras */
+.col-name { width: 25%; }
+.col-type { width: 20%; }
+.col-scope { width: 15%; }
+.col-datatype { width: 20%; }

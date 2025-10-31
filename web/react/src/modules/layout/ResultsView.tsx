@@ -15,11 +15,19 @@ export interface Token {
     column: number;
 }
 
+export interface SymbolEntry {
+  name: string;
+  symbolType: string; // ✅ Mudei de 'type' para 'symbolType' para bater com o JSON
+  dataType: string;
+  scope: string;
+  value?: string; // Opcional
+}
+
 export interface CompilationArtifacts {
     rawOutput: string;
     tokens: Token[];
     syntaxTree?: string;
-    symbolTable?: string;
+    symbolTable?: SymbolEntry[];
     tac?: string;
     arm?: string;
     output?: string;
@@ -59,25 +67,20 @@ const ResultsView: React.FC<ResultsViewProps> = ({ code, artifacts, onBack }) =>
                     </div>
                 );
 
+                // ResultsView.tsx - na função renderTabContent
             case 'symbols': {
-                if (!artifacts.symbolTable) {
+                if (!artifacts.symbolTable || artifacts.symbolTable.length === 0) {
                     return (
                         <div className="placeholder-content">
                             <div className="placeholder-icon">📊</div>
                             <h3>No Symbol Table Available</h3>
+                            <p>The symbol table will appear here after compilation.</p>
                         </div>
                     );
                 }
-                // Parse lines ignoring header bar separators
-                const lines = artifacts.symbolTable.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-                const dataStart = lines.findIndex(l => l.startsWith('Nome')); // header line
-                const entries = lines.slice(dataStart + 2) // skip header + separator
-                    .map(line => {
-                        const parts = line.split('|').map(p => p.trim());
-                        return { name: parts[0], type: parts[1], scope: 'global', value: parts[2] };
-                    })
-                    .filter(e => e.name && e.type);
-                return <SymbolTableTab table={entries} />;
+                
+                // ✅ AGORA artifacts.symbolTable já é SymbolEntry[]
+                return <SymbolTableTab table={artifacts.symbolTable} />;
             }
 
             case 'tac':

@@ -1,5 +1,6 @@
 import type { CompilationArtifacts } from '../layout/ResultsView';
 import { Token } from '../layout/ResultsView';
+import { SymbolEntry } from '../layout/ResultsView';
 
 function extractSection(raw: string, start: string, end: string): string {
     const startIndex = raw.indexOf(start);
@@ -65,9 +66,37 @@ export function extractTokens(raw: string): Token[] {
 }
 
 // Extrai árvore sintática
-export function extractSyntaxTree(raw: string): string {
-    console.log("raw: ", raw);
-    return extractSection(raw, '=== ÁRVORE SINTÁTICA ===', '=== CÓDIGO DE TRÊS ENDEREÇOS ===');
+// buildArtifacts.tsx - adicionar função para fallback
+export function extractSymbolTable(raw: string): SymbolEntry[] {
+    const symbolSection = extractSection(raw, '=== TABELA DE SÍMBOLOS ===', '=== ÁRVORE SINTÁTICA ===');
+    
+    if (!symbolSection) return [];
+    
+    const lines = symbolSection.split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0 && !line.includes('---')); // Remover linhas de separador
+    
+    console.log('📊 Linhas da tabela de símbolos:', lines);
+    
+    const symbols: SymbolEntry[] = [];
+    
+    // Pular cabeçalho e processar linhas de dados
+    for (let i = 2; i < lines.length; i++) { // Pular "Nome | TipoSimbolo | TipoDado" e "---"
+        const line = lines[i];
+        const parts = line.split('|').map(part => part.trim());
+        
+        if (parts.length >= 3) {
+            symbols.push({
+                name: parts[0] || '',
+                symbolType: parts[1] || 'VAR', // No formato textual, assume VAR
+                dataType: parts[2] || 'int',
+                scope: 'global' // No formato textual, assume escopo global
+            });
+        }
+    }
+    
+    console.log('📋 Símbolos extraídos:', symbols);
+    return symbols;
 }
 
 // Extrai TAC
@@ -147,21 +176,24 @@ export function extractProgramOutput(raw: string): string {
 }
 
 // buildArtifacts.tsx - na função buildArtifactsFromRaw
+// buildArtifacts.tsx - na função buildArtifactsFromRaw
 export function buildArtifactsFromRaw(code: string, raw: string): CompilationArtifacts {
     try {
         const jsonData = JSON.parse(raw);
         
         console.log('✅ Usando novo formato JSON');
-        console.log("jsonData: ", jsonData);
         
         const tokens = jsonData.phases?.lexical?.tokens || [];
+        
+        // ✅ EXTRAIR SYMBOL TABLE ESTRUTURADA
+        const symbols = jsonData.phases?.semantic?.symbols || [];
+        console.log('📋 Símbolos extraídos do JSON:', symbols);
         
         return {
             rawOutput: raw,
             tokens: tokens,
-            syntaxTree: jsonData.phases?.syntax?.ast || '', // ✅ Já vem formatada
-            symbolTable: jsonData.phases?.semantic?.symbols ? 
-                JSON.stringify(jsonData.phases.semantic.symbols, null, 2) : '',
+            syntaxTree: jsonData.phases?.syntax?.ast || '',
+            symbolTable: symbols, // ✅ AGORA é um array, não string JSON
             tac: jsonData.phases?.intermediate?.tac ? 
                 JSON.stringify(jsonData.phases.intermediate.tac, null, 2) : '',
             arm: jsonData.phases?.codegen?.code ? 
@@ -174,8 +206,7 @@ export function buildArtifactsFromRaw(code: string, raw: string): CompilationArt
         return {
             rawOutput: raw,
             tokens: extractTokens(raw),
-            syntaxTree: extractSyntaxTree(raw), // ✅ Fallback para formato textual
-            symbolTable: extractSection(raw, '=== TABELA DE SÍMBOLOS ===', '=== ÁRVORE SINTÁTICA ==='),
+            symbolTable: extractSymbolTable(raw), // ✅ Função atualizada para fallback
             tac: extractTAC(raw),
             arm: extractARM(raw),
             output: extractProgramOutput(raw)
