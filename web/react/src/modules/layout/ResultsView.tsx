@@ -6,7 +6,6 @@ import TACTab from '../tabs/TACTab';
 import SymbolTableTab from '../tabs/SymbolTableTab';
 import ARMTab from '../tabs/ARMTab';
 import OutputTab from '../tabs/OutputTab';
-import { parseTACFromText } from '../compiler/TACParser';
 
 export interface Token {
     type: string;
@@ -31,6 +30,8 @@ export interface TACInstruction {
     arg2: string;
     type: string;
     isTemporary?: boolean; // ✅ Nova propriedade do JSON
+    operation?: string; // Add missing property to match TACTab
+    operands?: string[]; // Add missing property to match TACTab
 }
 
 export interface CompilationArtifacts {

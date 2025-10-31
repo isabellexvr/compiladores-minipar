@@ -186,13 +186,16 @@ export function buildArtifactsFromRaw(code: string, raw: string): CompilationArt
     const tac = jsonData.phases?.intermediate?.tac || [];
     const armLines: string[] = jsonData.phases?.codegen?.code || [];
 
+        const armArray = jsonData.phases?.codegen?.code || [];
+        const arm = Array.isArray(armArray) ? armArray.join('\n') : '';
+
     return {
         rawOutput: raw,
         tokens,
         syntaxTree: jsonData.phases?.syntax?.ast || '',
         symbolTable: symbols,
         tac,
-        arm: armLines.join('\n'),
+        arm,
         output: jsonData.execution?.output || ''
     };
 }

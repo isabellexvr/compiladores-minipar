@@ -282,3 +282,44 @@
 .line-code .register { color: #ffcc80; }
 .line-code .immediate { color: #ef9a9a; }
 .line-code .comment { color: #b0bec5; }
+
+/* ARMTab.css - AJUSTES */
+.syscall-badge {
+    background: #E91E63 !important;
+}
+
+/* Melhorar responsividade */
+.legend-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.legend-item {
+    font-size: 0.75rem;
+    padding: 3px 6px;
+}
+
+/* Ajustar layout das linhas para mobile */
+@media (max-width: 768px) {
+    .arm-line {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+    
+    .line-type {
+        display: none; /* Esconder tipo em mobile */
+    }
+    
+    .line-icon {
+        margin: 0 8px;
+        width: 20px;
+        height: 20px;
+        font-size: 0.6rem;
+    }
+}
+
+/* Debug styles - remover depois */
+.arm-debug {
+    border-bottom: 1px solid #bbdefb;
+}

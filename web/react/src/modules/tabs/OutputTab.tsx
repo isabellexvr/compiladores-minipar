@@ -6,6 +6,7 @@ interface OutputTabProps {
 }
 
 const OutputTab: React.FC<OutputTabProps> = ({ output }) => {
+    console.log(output)
     return (
         <div className="output-tab">
             <div className="terminal-header">
