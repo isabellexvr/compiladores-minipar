@@ -126,7 +126,7 @@ std::string interpretTAC(const std::string &tacCode)
         std::string line = instructions[pc];
         pc++;
 
-        if (line.find("print") == 0)
+        if (line.rfind("print", 0) == 0) // inicia com 'print'
         {
             std::string varName = line.substr(5);
             varName.erase(0, varName.find_first_not_of(" \t"));
@@ -140,7 +140,7 @@ std::string interpretTAC(const std::string &tacCode)
                 outputLines.push_back("[undefined variable: " + varName + "]");
             }
         }
-        else if (line.find("if_false") == 0)
+        else if (line.rfind("if_false", 0) == 0)
         {
             size_t pos = line.find("goto");
             if (pos != std::string::npos)
@@ -162,7 +162,7 @@ std::string interpretTAC(const std::string &tacCode)
                 }
             }
         }
-        else if (line.find("goto") == 0)
+        else if (line.rfind("goto", 0) == 0)
         {
             std::string label = line.substr(4);
             label.erase(0, label.find_first_not_of(" \t"));
@@ -186,7 +186,12 @@ std::string interpretTAC(const std::string &tacCode)
 
             int value = 0;
 
-            if (right.find_first_not_of("0123456789") == std::string::npos)
+            if (right == "input()")
+            {
+                // Placeholder: sem interação real, definir 0
+                value = 0;
+            }
+            else if (right.find_first_not_of("0123456789") == std::string::npos)
             {
                 value = std::stoi(right);
             }
@@ -289,13 +294,17 @@ std::string interpretTAC(const std::string &tacCode)
 
                 value = leftVal + rightVal;
             }
-            else if (variables.find(right) != variables.end())
+            else
             {
-                value = variables[right];
-            }
-            else if (right.find_first_not_of("0123456789") == std::string::npos)
-            {
-                value = std::stoi(right);
+                // Pode ser variável existente ou literal
+                if (variables.find(right) != variables.end())
+                {
+                    value = variables[right];
+                }
+                else if (right.find_first_not_of("0123456789") == std::string::npos)
+                {
+                    value = std::stoi(right);
+                }
             }
 
             variables[left] = value;
@@ -313,7 +322,7 @@ std::string interpretTAC(const std::string &tacCode)
         result += line + "\n";
     }
 
-    return result.empty() ? "No output generated" : result;
+    return result;
 }
 
 // Função principal - NOVA VERSÃO JSON

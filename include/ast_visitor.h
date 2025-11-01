@@ -10,6 +10,7 @@ struct ChannelDeclNode;
 struct AssignmentNode;
 struct PrintNode;
 struct InputNode;
+struct InputCallNode;
 struct SendNode;
 struct ReceiveNode;
 struct IfNode;
@@ -41,6 +42,7 @@ public:
     virtual void visit(AssignmentNode &node) = 0;
     virtual void visit(PrintNode &node) = 0;
     virtual void visit(InputNode &node) = 0;
+    virtual void visit(InputCallNode &node) = 0;
     virtual void visit(SendNode &node) = 0;
     virtual void visit(ReceiveNode &node) = 0;
     virtual void visit(IfNode &node) = 0;

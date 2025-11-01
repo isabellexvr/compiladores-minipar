@@ -1,7 +1,0 @@
-fun soma(a, b){
-  SEQ
-    return a + b;
-}
-SEQ
-  x = soma(2, 3);
-  print x;

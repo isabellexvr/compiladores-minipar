@@ -1,6 +1,18 @@
 #include "tac_interpreter.h"
 #include <cstdlib>
 #include <iostream>
+#ifdef MINIPAR_DEBUG
+#define DBG(msg)          \
+    do                    \
+    {                     \
+        std::cerr << msg; \
+    } while (0)
+#else
+#define DBG(msg) \
+    do           \
+    {            \
+    } while (0)
+#endif
 
 double TACInterpreter::valueOf(const std::string &token) const
 {
@@ -146,10 +158,10 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
         const auto &ins = instrs[ip];
 
         // Adicionando log de depuração para cada instrução
-        std::cerr << "DEBUG [ip=" << ip << "]: "
-                  << ins.result << " = (" << ins.op << ") "
-                  << ins.arg1 << (ins.arg2.empty() ? "" : ", " + ins.arg2)
-                  << std::endl;
+        DBG("DEBUG [ip=" << ip << "]: "
+                         << ins.result << " = (" << ins.op << ") "
+                         << ins.arg1 << (ins.arg2.empty() ? "" : ", " + ins.arg2)
+                         << "\n");
 
         size_t next_ip = ip + 1; // próximo padrão
         if (ins.op == "=")

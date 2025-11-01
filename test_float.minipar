@@ -1,5 +1,0 @@
-fun id(x){ return x }
-SEQ
-f = 5.5
-r = id(f)
-print r;

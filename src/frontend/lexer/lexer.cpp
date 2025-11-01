@@ -5,8 +5,8 @@
 using namespace std;
 
 static unordered_map<string, TokenType> keywords = {
-    {"SEQ", TokenType::SEQ},
-    {"PAR", TokenType::PAR},
+    {"seq", TokenType::SEQ},
+    {"par", TokenType::PAR},
     {"if", TokenType::IF},
     {"else", TokenType::ELSE},
     {"while", TokenType::WHILE},
@@ -16,7 +16,7 @@ static unordered_map<string, TokenType> keywords = {
     {"return", TokenType::RETURN},
     {"true", TokenType::TRUE},
     {"false", TokenType::FALSE},
-    {"COMP", TokenType::COMP},
+    {"comp", TokenType::COMP},
     {"int", TokenType::INT},
     {"bool", TokenType::BOOL},
     {"string", TokenType::STRING},
@@ -108,13 +108,21 @@ Token Lexer::read_string()
     string str;
     int start_line = line;
     int start_column = column;
-    advance();
+    advance(); // skip opening quote
     while (current_char != '\0' && current_char != '"')
     {
+        if (current_char == '\\' && peek() == '"')
+        {
+            advance(); // skip backslash
+            str += '"';
+            advance();
+            continue;
+        }
         str += current_char;
         advance();
     }
-    advance();
+    if (current_char == '"')
+        advance(); // closing quote
     return Token(TokenType::STRING_LITERAL, str, start_line, start_column);
 }
 
@@ -125,7 +133,7 @@ Token Lexer::read_identifier()
     int start_column = column;
     while (current_char != '\0' && (isalnum(current_char) || current_char == '_'))
     {
-        identifier += current_char;
+        identifier += (char)tolower(current_char);
         advance();
     }
     auto it = keywords.find(identifier);
@@ -265,6 +273,8 @@ vector<Token> Lexer::tokenize()
             tokens.push_back(Token(TokenType::DOT, ".", start_line, start_column));
             break;
         default:
+            // caractere desconhecido: ignorar mas poderia gerar token de erro
+            // avançar para evitar loop
             break;
         }
         advance();

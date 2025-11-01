@@ -1,6 +1,0 @@
-fun inc(x){ SEQ return x + 1; }
-SEQ
-  a = 10
-  b = inc(a)
-  c = inc( inc(a) )
-  print a, b, c;

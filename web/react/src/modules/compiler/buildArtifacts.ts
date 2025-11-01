@@ -189,6 +189,8 @@ export function buildArtifactsFromRaw(code: string, raw: string): CompilationArt
         const armArray = jsonData.phases?.codegen?.code || [];
         const arm = Array.isArray(armArray) ? armArray.join('\n') : '';
 
+        console.log(raw)
+
     return {
         rawOutput: raw,
         tokens,

@@ -1,6 +1,18 @@
 #include "parser.h"
 #include <iostream>
 #include <sstream>
+#ifdef MINIPAR_DEBUG
+#define DBG(msg)          \
+    do                    \
+    {                     \
+        std::cerr << msg; \
+    } while (0)
+#else
+#define DBG(msg) \
+    do           \
+    {            \
+    } while (0)
+#endif
 
 using namespace std;
 
@@ -200,25 +212,38 @@ unique_ptr<SeqNode> Parser::parse_seq_block()
     consume(); // consumir 'SEQ'
     auto seq = make_unique<SeqNode>();
     bool hasBrace = false;
-    if (match(LBRACE)) {
+    if (match(LBRACE))
+    {
         consume();
         hasBrace = true;
-        std::cerr << "[PARSE] enter SEQ block with '{' at token index=" << current_token << "\n";
-    } else {
-        std::cerr << "[PARSE] enter SEQ block without '{' at token index=" << current_token << "\n";
+        DBG("[PARSE] enter SEQ block with '{' at token index=" << current_token << "\n");
     }
-    while (!match(END)) {
-        if (hasBrace && match(RBRACE)) break;
-        if (!hasBrace && (match(SEQ) || match(PAR) || match(ELSE) || match(RBRACE))) break;
+    else
+    {
+        DBG("[PARSE] enter SEQ block without '{' at token index=" << current_token << "\n");
+    }
+    while (!match(END))
+    {
+        if (hasBrace && match(RBRACE))
+            break;
+        if (!hasBrace && (match(SEQ) || match(PAR) || match(ELSE) || match(RBRACE)))
+            break;
         auto stmt = parse_statement();
-        if (stmt) { seq->statements.push_back(std::move(stmt)); continue; }
-        if (!match(END)) {
-            if (match(RBRACE)) break;
+        if (stmt)
+        {
+            seq->statements.push_back(std::move(stmt));
+            continue;
+        }
+        if (!match(END))
+        {
+            if (match(RBRACE))
+                break;
             consume();
         }
     }
-    if (hasBrace && match(RBRACE)) consume();
-    std::cerr << "[PARSE] exit SEQ block size=" << seq->statements.size() << " hasBrace=" << (hasBrace?1:0) << " index=" << current_token << "\n";
+    if (hasBrace && match(RBRACE))
+        consume();
+    DBG("[PARSE] exit SEQ block size=" << seq->statements.size() << " hasBrace=" << (hasBrace ? 1 : 0) << " index=" << current_token << "\n");
     return seq;
 }
 
@@ -558,6 +583,24 @@ unique_ptr<ASTNode> Parser::parse_primary()
             return un;
         }
     }
+    // input() como expressão: token INPUT seguido de '(' ')' ou IDENTIFIER 'input' '(' ')'
+    if (match(INPUT))
+    {
+        // padrão: input IDENT  (statement) já tratado em parse_statement; aqui queremos input()
+        // Se próximo for LPAREN tratamos como chamada expressão
+        consume();
+        if (match(LPAREN))
+        {
+            consume();
+            if (match(RPAREN))
+            {
+                consume();
+                auto inCall = make_unique<InputCallNode>();
+                return inCall;
+            }
+        }
+        // fallback: não era expressão input(), retornar nullptr para forçar erro de sintaxe leve
+    }
     if (match(NUMBER))
     {
         auto num_node = make_unique<NumberNode>();
@@ -739,16 +782,20 @@ unique_ptr<ASTNode> Parser::parse_while_statement()
     {
         while_node->body = parse_seq_block();
     }
-    else if (match(LBRACE)) 
+    else if (match(LBRACE))
     {
         consume(); // '{'
         auto body_seq = make_unique<SeqNode>();
-        while(!match(RBRACE) && !match(END)) {
+        while (!match(RBRACE) && !match(END))
+        {
             auto stmt = parse_statement();
-            if (stmt) body_seq->statements.push_back(std::move(stmt));
-            else consume();
+            if (stmt)
+                body_seq->statements.push_back(std::move(stmt));
+            else
+                consume();
         }
-        if(match(RBRACE)) consume(); // '}'
+        if (match(RBRACE))
+            consume(); // '}'
         while_node->body = std::move(body_seq);
     }
     else
@@ -758,13 +805,14 @@ unique_ptr<ASTNode> Parser::parse_while_statement()
     }
     // Debug: imprimir tamanho do corpo do while
     size_t bodySize = 0;
-    if (while_node->body) {
-        if (auto seqBody = dynamic_cast<SeqNode*>(while_node->body.get()))
+    if (while_node->body)
+    {
+        if (auto seqBody = dynamic_cast<SeqNode *>(while_node->body.get()))
             bodySize = seqBody->statements.size();
         else
             bodySize = 1; // single statement
     }
-    std::cerr << "[PARSE] while condition parsed, bodySize=" << bodySize << " tokenIndex=" << current_token << "\n";
+    DBG("[PARSE] while condition parsed, bodySize=" << bodySize << " tokenIndex=" << current_token << "\n");
     return while_node;
 }
 

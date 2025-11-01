@@ -29,6 +29,7 @@ public:
     void visit(AssignmentNode &node) override;
     void visit(PrintNode &node) override;
     void visit(InputNode &node) override;
+    void visit(InputCallNode &node) override;
     void visit(SendNode &node) override;
     void visit(ReceiveNode &node) override;
     void visit(IfNode &node) override;

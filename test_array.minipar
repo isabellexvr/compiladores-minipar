@@ -1,4 +1,0 @@
-SEQ
-  arr = [1, 2, 3];
-    x = arr[0];
-    print x, arr[1];

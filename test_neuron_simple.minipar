@@ -1,7 +1,0 @@
-fun activation(sum){ if (sum >= 0) SEQ return 1; return 0; }
-SEQ
-input_val = 1.0
-weight = 0.5
-sum = input_val * weight
-output = activation(sum)
-print output;

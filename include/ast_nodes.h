@@ -89,6 +89,13 @@ struct InputNode : public ASTNode
     std::string toString() const override;
 };
 
+// input() usado como expressão que retorna valor
+struct InputCallNode : public ASTNode
+{
+    void accept(ASTVisitor &visitor) override;
+    std::string toString() const override { return "InputCall()"; }
+};
+
 struct SendNode : public ASTNode
 {
     std::string channelName;

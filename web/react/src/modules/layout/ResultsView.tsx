@@ -15,11 +15,11 @@ export interface Token {
 }
 
 export interface SymbolEntry {
-  name: string;
-  symbolType: string; // ✅ Mudei de 'type' para 'symbolType' para bater com o JSON
-  dataType: string;
-  scope: string;
-  value?: string; // Opcional
+    name: string;
+    symbolType: string; // ✅ Mudei de 'type' para 'symbolType' para bater com o JSON
+    dataType: string;
+    scope: string;
+    value?: string; // Opcional
 }
 
 export interface TACInstruction {
@@ -30,7 +30,7 @@ export interface TACInstruction {
     arg2: string;
     type: string;
     isTemporary?: boolean; // ✅ Nova propriedade do JSON
-    operation?: string; // Add missing property to match TACTab
+    operation: string; // tornar obrigatório para casar com TACTab
     operands?: string[]; // Add missing property to match TACTab
 }
 
@@ -61,6 +61,7 @@ const tabs = [
 
 const ResultsView: React.FC<ResultsViewProps> = ({ code, artifacts, onBack }) => {
     const [active, setActive] = useState<string>('tokens');
+    const [showSource, setShowSource] = useState<boolean>(true);
 
     const renderTabContent = () => {
         switch (active) {
@@ -78,7 +79,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ code, artifacts, onBack }) =>
                     </div>
                 );
 
-                // ResultsView.tsx - na função renderTabContent
+            // ResultsView.tsx - na função renderTabContent
             case 'symbols': {
                 if (!artifacts.symbolTable || artifacts.symbolTable.length === 0) {
                     return (
@@ -89,16 +90,20 @@ const ResultsView: React.FC<ResultsViewProps> = ({ code, artifacts, onBack }) =>
                         </div>
                     );
                 }
-                
+
                 // ✅ AGORA artifacts.symbolTable já é SymbolEntry[]
                 return <SymbolTableTab table={artifacts.symbolTable} />;
             }
 
-        // ResultsView.tsx - na função renderTabContent
+            // ResultsView.tsx - na função renderTabContent
             case 'tac':
                 return artifacts.tac ? (
-                    <TACTab 
-                        instructions={artifacts.tac} // ✅ AGORA já é TACInstruction[]
+                    <TACTab
+                        instructions={artifacts.tac.map(instr => ({
+                            ...instr,
+                            operation: instr.operation ?? instr.op,
+                            operands: instr.operands ?? []
+                        }))}
                         className="tac-tab"
                     />
                 ) : (
@@ -111,7 +116,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ code, artifacts, onBack }) =>
 
             case 'arm':
                 return artifacts.arm ? (
-                    <ARMTab 
+                    <ARMTab
                         assemblyCode={artifacts.arm}
                         className="arm-tab"
                     />
@@ -123,19 +128,19 @@ const ResultsView: React.FC<ResultsViewProps> = ({ code, artifacts, onBack }) =>
                     </div>
                 );
 
-        case 'output':
-            return artifacts.output ? (
-                <OutputTab output={typeof artifacts.output === 'string' 
-                    ? artifacts.output.split('\n').filter(line => line.trim().length > 0)
-                    : artifacts.output
-                } />
-            ) : (
-                <div className="placeholder-content">
-                    <div className="placeholder-icon">📺</div>
-                    <h3>No Program Output</h3>
-                    <p>The program output will appear here after execution.</p>
-                </div>
-            );
+            case 'output':
+                return artifacts.output ? (
+                    <OutputTab output={typeof artifacts.output === 'string'
+                        ? artifacts.output.split('\n').filter(line => line.trim().length > 0)
+                        : artifacts.output
+                    } />
+                ) : (
+                    <div className="placeholder-content">
+                        <div className="placeholder-icon">📺</div>
+                        <h3>No Program Output</h3>
+                        <p>The program output will appear here after execution.</p>
+                    </div>
+                );
 
             default:
                 return null;
@@ -145,17 +150,28 @@ const ResultsView: React.FC<ResultsViewProps> = ({ code, artifacts, onBack }) =>
     return (
         <div className="results-view">
             <div className="results-header">
-                <button className="back-btn" onClick={onBack}>
-                    <span className="back-arrow">←</span>
-                    Back to Terminal
-                </button>
+                <div className="left-actions">
+                    <button className="back-btn" onClick={onBack}>
+                        <span className="back-arrow">←</span>
+                        Back
+                    </button>
+                    <button
+                        className="toggle-src-btn"
+                        onClick={() => setShowSource(s => !s)}
+                        title={showSource ? 'Ocultar código fonte' : 'Mostrar código fonte'}
+                    >
+                        {showSource ? 'Hide Source' : 'Show Source'}
+                    </button>
+                </div>
                 <h2>Compilation Results</h2>
             </div>
 
-            <div className="code-preview">
-                <div className="preview-header">Source Code</div>
-                <pre className="source-code">{code}</pre>
-            </div>
+            {showSource && (
+                <div className="code-preview">
+                    <div className="preview-header">Source Code</div>
+                    <pre className="source-code">{code}</pre>
+                </div>
+            )}
 
             <div className="tabs-container">
                 <div className="tabs-scroll">

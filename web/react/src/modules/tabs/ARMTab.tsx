@@ -1,5 +1,5 @@
 // ARMTab.tsx - VERSÃO FINAL LIMPA
-import React from 'react';
+import React, { useState } from 'react';
 import './ARMTab.css';
 
 interface ARMTabProps {
@@ -8,39 +8,61 @@ interface ARMTabProps {
 }
 
 const ARMTab: React.FC<ARMTabProps> = ({ assemblyCode, className = '' }) => {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopyAll = async () => {
+        const text = assemblyCode.trim();
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(text);
+            } else {
+                // Fallback
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+            }
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1800);
+        } catch (e) {
+            console.error('Copy failed', e);
+        }
+    };
     const parseAssemblyCode = (code: string) => {
         if (!code) return [];
-        
+
         const lines = code.split('\n');
         const processedLines: string[] = [];
-        
+
         for (let i = 0; i < lines.length; i++) {
             const currentLine = lines[i].trim();
             if (currentLine.length === 0) continue;
-            
+
             // Juntar linhas que são continuação de strings
             if (processedLines.length > 0) {
                 const lastLine = processedLines[processedLines.length - 1];
-                if ((lastLine.includes('"') && !lastLine.match(/".*"/)) || 
+                if ((lastLine.includes('"') && !lastLine.match(/".*"/)) ||
                     (lastLine.includes('.asciz') && !lastLine.endsWith('"'))) {
                     processedLines[processedLines.length - 1] += ' ' + currentLine;
                     continue;
                 }
             }
-            
+
             processedLines.push(currentLine);
         }
-        
+
         return processedLines
             .filter(line => line.length > 0)
             .map((line, index) => {
                 let type = 'other';
                 let description = '';
-                
+
                 if (line.startsWith('.')) {
                     type = 'directive';
                     description = 'Diretiva do assembler';
-                } 
+                }
                 else if (line.endsWith(':')) {
                     type = 'label';
                     description = 'Label/marcador';
@@ -57,8 +79,8 @@ const ARMTab: React.FC<ARMTabProps> = ({ assemblyCode, className = '' }) => {
                     type = 'instruction';
                     description = 'Instrução de movimento/memória';
                 }
-                else if (line.startsWith('add') || line.startsWith('sub') || 
-                         line.startsWith('mul') || line.startsWith('div')) {
+                else if (line.startsWith('add') || line.startsWith('sub') ||
+                    line.startsWith('mul') || line.startsWith('div')) {
                     type = 'instruction';
                     description = 'Instrução aritmética';
                 }
@@ -78,11 +100,11 @@ const ARMTab: React.FC<ARMTabProps> = ({ assemblyCode, className = '' }) => {
                     type = 'syscall';
                     description = 'Chamada de sistema';
                 }
-                
-                return { 
-                    line, 
-                    type, 
-                    description, 
+
+                return {
+                    line,
+                    type,
+                    description,
                     number: index + 1
                 };
             });
@@ -171,6 +193,15 @@ const ARMTab: React.FC<ARMTabProps> = ({ assemblyCode, className = '' }) => {
                     <span className="stat">{stats.total} linhas</span>
                     <span className="stat">{stats.instructions} instruções</span>
                     <span className="stat">{stats.directives} diretivas</span>
+                    <button
+                        type="button"
+                        className="arm-copy-btn"
+                        onClick={handleCopyAll}
+                        aria-label="Copiar todo o código ARM"
+                        title="Copiar todo o código ARM"
+                    >
+                        {copied ? '✅ Copiado' : '📋 Copiar'}
+                    </button>
                 </div>
             </div>
 
@@ -202,7 +233,7 @@ const ARMTab: React.FC<ARMTabProps> = ({ assemblyCode, className = '' }) => {
                 <div className="info-section">
                     <h4>📋 Sobre o Código ARMv7:</h4>
                     <p>
-                        Este código assembly é específico para processadores <strong>ARMv7</strong> e pode ser 
+                        Este código assembly é específico para processadores <strong>ARMv7</strong> e pode ser
                         executado no emulador <strong>CPUlator</strong>.
                     </p>
                 </div>
@@ -220,13 +251,13 @@ const ARMTab: React.FC<ARMTabProps> = ({ assemblyCode, className = '' }) => {
                         <div
                             key={item.number}
                             className="arm-line"
-                            style={{ 
+                            style={{
                                 '--line-color': getLineColor(item.type)
                             } as any}
                             title={`${item.description} | Linha ${item.number}`}
                         >
                             <div className="line-number">{item.number}</div>
-                            <div 
+                            <div
                                 className="line-icon"
                                 style={{ backgroundColor: getLineColor(item.type) }}
                             >

@@ -30,6 +30,29 @@
     display: flex;
     gap: 15px;
     margin-top: 15px;
+.arm-copy-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.25);
+    padding: 0.4rem 0.75rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    line-height: 1;
+    border-radius: 5px;
+    cursor: pointer;
+    color: #eee;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: background .25s, border-color .25s, color .25s;
+}
+.arm-copy-btn:hover {
+    background: #76d95b;
+    border-color: #76d95b;
+    color: #101010;
+}
+.arm-copy-btn:active {
+    transform: translateY(1px);
+}
 }
 
 .arm-stats .stat {

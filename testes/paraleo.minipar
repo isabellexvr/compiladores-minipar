@@ -1,7 +1,0 @@
-PAR
-    SEQ
-        x = 10
-        print x
-    SEQ  
-        y = 20
-        print y
