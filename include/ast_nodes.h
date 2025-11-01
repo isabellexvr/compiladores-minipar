@@ -228,4 +228,14 @@ struct ArrayAccessNode : public ASTNode
     std::string toString() const override { return "ArrayAccess"; }
 };
 
+// Array element assignment: arr[index] = value
+struct ArrayAssignmentNode : public ASTNode
+{
+    std::unique_ptr<ASTNode> array; // IdentifierNode (base) for now
+    std::unique_ptr<ASTNode> index; // expression
+    std::unique_ptr<ASTNode> value; // expression
+    void accept(ASTVisitor &visitor) override;
+    std::string toString() const override;
+};
+
 #endif

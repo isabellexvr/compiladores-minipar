@@ -158,6 +158,15 @@ void TACGenerator::generate_statement(ASTNode *stmt)
                 instructions.push_back(TACInstruction("", "print", temp));
         }
     }
+    else if (auto arrAssign = dynamic_cast<ArrayAssignmentNode *>(stmt))
+    {
+        // arr[index] = value
+        std::string base = generate_expression(arrAssign->array.get());
+        std::string idx = generate_expression(arrAssign->index.get());
+        std::string val = generate_expression(arrAssign->value.get());
+        // Use array_set with base as result, val as arg1, idx as arg2
+        instructions.push_back(TACInstruction(base, "array_set", val, idx));
+    }
     else if (auto while_node = dynamic_cast<WhileNode *>(stmt))
     {
         string start_label = new_label();

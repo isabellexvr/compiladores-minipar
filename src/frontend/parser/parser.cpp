@@ -318,6 +318,39 @@ unique_ptr<ASTNode> Parser::parse_statement()
             }
         }
     }
+    // Array assignment: IDENT '[' expr ']' '=' expr
+    if (match(TokenType::IDENTIFIER) && peek().type == TokenType::LBRACKET)
+    {
+        // lookahead to see if pattern IDENT '[' ... ']' '='
+        size_t save = current_token;
+        std::string baseName = current().value;
+        consume(); // IDENT
+        if (match(LBRACKET))
+        {
+            consume();
+            auto idxExpr = parse_expression();
+            if (match(RBRACKET))
+            {
+                consume();
+                if (match(ASSIGN))
+                {
+                    consume();
+                    auto valExpr = parse_expression();
+                    if (match(SEMICOLON))
+                        consume();
+                    auto arrAssign = make_unique<ArrayAssignmentNode>();
+                    auto idNode = make_unique<IdentifierNode>();
+                    idNode->name = baseName;
+                    arrAssign->array = std::move(idNode);
+                    arrAssign->index = std::move(idxExpr);
+                    arrAssign->value = std::move(valExpr);
+                    return arrAssign;
+                }
+            }
+        }
+        // rollback if not proper pattern
+        current_token = save;
+    }
     if (match(TokenType::IDENTIFIER) && peek().type == TokenType::ASSIGN)
     {
         // Assignment
