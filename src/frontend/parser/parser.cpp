@@ -186,7 +186,7 @@ unique_ptr<SeqNode> Parser::parse_seq_block()
     auto seq = make_unique<SeqNode>();
 
     // Parse statements até encontrar outro SEQ, PAR, ou fim
-    while (!match(END) && !match(SEQ) && !match(PAR))
+    while (!match(END) && !match(SEQ) && !match(PAR) && !match(ELSE))
     {
         auto stmt = parse_statement();
         if (stmt)
