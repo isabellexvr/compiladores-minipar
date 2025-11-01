@@ -1,0 +1,24 @@
+fun partition(arr, start, end) {
+  SEQ
+    pivot = arr[end]
+    i = start - 1
+    j = start
+    while (j < end) SEQ
+      if (arr[j] <= pivot) SEQ
+        i = i + 1
+        temp = arr[i]
+        arr[i] = arr[j]
+        arr[j] = temp
+      j = j + 1
+    temp = arr[i + 1]
+    arr[i + 1] = arr[end]
+    arr[end] = temp
+    return i + 1
+}
+
+SEQ
+  arr = [33, 12, 98, 5]
+  print "Array antes da partição:", arr
+  pivot_index = partition(arr, 0, 3)
+  print "Array após partição:", arr
+  print "Índice do pivô:", pivot_index

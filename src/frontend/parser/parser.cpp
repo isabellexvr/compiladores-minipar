@@ -200,44 +200,25 @@ unique_ptr<SeqNode> Parser::parse_seq_block()
     consume(); // consumir 'SEQ'
     auto seq = make_unique<SeqNode>();
     bool hasBrace = false;
-    if (match(LBRACE))
-    {
+    if (match(LBRACE)) {
         consume();
         hasBrace = true;
+        std::cerr << "[PARSE] enter SEQ block with '{' at token index=" << current_token << "\n";
+    } else {
+        std::cerr << "[PARSE] enter SEQ block without '{' at token index=" << current_token << "\n";
     }
-
-    // Loop de coleta de statements dentro do bloco SEQ.
-    // Caso haja '{', continuamos até '}' correspondente.
-    // Caso não haja '{', paramos ao encontrar início de outro bloco estrutural ou fim.
-    while (!match(END))
-    {
-        if (hasBrace && match(RBRACE))
-            break; // fim do bloco com chaves
-        if (!hasBrace && (match(SEQ) || match(PAR) || match(ELSE)))
-            break; // início de outro bloco estrutural sem chaves
-        // Se estivermos dentro de uma função (heurística: próximo token é '}' seguido de possível SEQ principal), parse_seq_block não deve atravessar '}'
-        if (!hasBrace && match(RBRACE))
-            break;
-
+    while (!match(END)) {
+        if (hasBrace && match(RBRACE)) break;
+        if (!hasBrace && (match(SEQ) || match(PAR) || match(ELSE) || match(RBRACE))) break;
         auto stmt = parse_statement();
-        if (stmt)
-        {
-            seq->statements.push_back(std::move(stmt));
-            continue;
-        }
-        // Se não reconheceu a statement mas ainda não é fim de bloco, consumir token para evitar loop infinito.
-        if (!match(END))
-        {
-            // Se encontrar '}', sair (caso tenha sido não tratado como stmt)
-            if (match(RBRACE))
-                break;
+        if (stmt) { seq->statements.push_back(std::move(stmt)); continue; }
+        if (!match(END)) {
+            if (match(RBRACE)) break;
             consume();
         }
     }
-
-    if (hasBrace && match(RBRACE))
-        consume(); // consumir '}' de fechamento
-
+    if (hasBrace && match(RBRACE)) consume();
+    std::cerr << "[PARSE] exit SEQ block size=" << seq->statements.size() << " hasBrace=" << (hasBrace?1:0) << " index=" << current_token << "\n";
     return seq;
 }
 
@@ -317,6 +298,35 @@ unique_ptr<ASTNode> Parser::parse_statement()
                 return recvNode;
             }
         }
+    }
+    // Chamada de função como statement: IDENTIFIER '(' ... ')'
+    if (match(TokenType::IDENTIFIER) && peek().type == TokenType::LPAREN)
+    {
+        std::string fname = current().value;
+        consume(); // IDENT
+        consume(); // '('
+        auto callNode = make_unique<CallNode>();
+        callNode->name = fname;
+        if (!match(RPAREN))
+        {
+            while (true)
+            {
+                auto arg = parse_expression();
+                if (arg)
+                    callNode->args.push_back(std::move(arg));
+                if (match(COMMA))
+                {
+                    consume();
+                    continue;
+                }
+                break;
+            }
+        }
+        if (match(RPAREN))
+            consume();
+        if (match(SEMICOLON))
+            consume();
+        return callNode;
     }
     // Array assignment: IDENT '[' expr ']' '=' expr
     if (match(TokenType::IDENTIFIER) && peek().type == TokenType::LBRACKET)
@@ -627,7 +637,7 @@ unique_ptr<ASTNode> Parser::parse_primary()
         // handle chained array access: identifier '[' expression ']'
         while (match(LBRACKET))
         {
-            consume(); // [
+            consume(); // '["
             auto idxExpr = parse_expression();
             if (match(RBRACKET))
                 consume();
@@ -729,20 +739,32 @@ unique_ptr<ASTNode> Parser::parse_while_statement()
     {
         while_node->body = parse_seq_block();
     }
-    else
+    else if (match(LBRACE)) 
     {
+        consume(); // '{'
         auto body_seq = make_unique<SeqNode>();
-        // fallback antigo limitado
-        for (int i = 0; i < 2 && !match(END) && !match(SEQ) && !match(PAR); i++)
-        {
+        while(!match(RBRACE) && !match(END)) {
             auto stmt = parse_statement();
-            if (stmt)
-                body_seq->statements.push_back(std::move(stmt));
-            else
-                break;
+            if (stmt) body_seq->statements.push_back(std::move(stmt));
+            else consume();
         }
+        if(match(RBRACE)) consume(); // '}'
         while_node->body = std::move(body_seq);
     }
+    else
+    {
+        // Fallback para statement único
+        while_node->body = parse_statement();
+    }
+    // Debug: imprimir tamanho do corpo do while
+    size_t bodySize = 0;
+    if (while_node->body) {
+        if (auto seqBody = dynamic_cast<SeqNode*>(while_node->body.get()))
+            bodySize = seqBody->statements.size();
+        else
+            bodySize = 1; // single statement
+    }
+    std::cerr << "[PARSE] while condition parsed, bodySize=" << bodySize << " tokenIndex=" << current_token << "\n";
     return while_node;
 }
 
