@@ -474,45 +474,43 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
         }
         else if (ins.op == "array_get")
         {
-            // Acesso simples 1D escalar
+            // Suporte a acesso sequencial: se elemento for subarray referenciado em arraysNested, copia subarray
             auto it = arrays.find(ins.arg1);
-            double val = 0.0;
-            if (it != arrays.end())
+            if (it == arrays.end())
+            {
+                env[ins.result] = 0;
+                envF[ins.result] = 0.0;
+            }
+            else
             {
                 size_t idx = (size_t)valueOf(ins.arg2);
-                if (idx < it->second.size())
-                    val = it->second[idx];
-            }
-            env[ins.result] = (int)val;
-            envF[ins.result] = val;
-        }
-        else if (ins.op == "array_get2")
-        {
-            // arg1 = nome array base; arg2 = "i:j" índices
-            std::string ij = ins.arg2;
-            size_t colon = ij.find(':');
-            int i = 0, j = 0;
-            if (colon != std::string::npos)
-            {
-                std::string si = ij.substr(0, colon);
-                std::string sj = ij.substr(colon + 1);
-                i = (int)valueOf(si);
-                j = (int)valueOf(sj);
-            }
-            std::cerr << "DEBUG array_get2 base=" << ins.arg1 << " i=" << i << " j=" << j << std::endl;
-            double val = 0.0;
-            if (matrices.count(ins.arg1) && i >= 0)
-            {
-                auto &mat = matrices[ins.arg1];
-                if (i < (int)mat.size())
+                double val = 0.0;
+                bool handledSubarray = false;
+                // Verifica referência aninhada
+                auto nestedIt = arraysNested.find(ins.arg1);
+                if (nestedIt != arraysNested.end() && idx < nestedIt->second.size())
                 {
-                    auto &row = mat[i];
-                    if (j >= 0 && j < (int)row.size())
-                        val = row[j];
+                    const std::string &subName = nestedIt->second[idx];
+                    if (!subName.empty() && arrays.count(subName))
+                    {
+                        // Copia conteúdo da linha/subarray para novo temp
+                        arrays[ins.result] = arrays[subName];
+                        // Copia estrutura nested adicional (permite 3D futuramente)
+                        if (arraysNested.count(subName))
+                            arraysNested[ins.result] = arraysNested[subName];
+                        handledSubarray = true;
+                        env[ins.result] = 0;
+                        envF[ins.result] = 0.0;
+                    }
+                }
+                if (!handledSubarray)
+                {
+                    if (idx < it->second.size())
+                        val = it->second[idx];
+                    env[ins.result] = (int)val;
+                    envF[ins.result] = val;
                 }
             }
-            env[ins.result] = (int)val;
-            envF[ins.result] = val;
         }
         ip = next_ip;
     }

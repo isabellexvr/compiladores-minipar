@@ -390,16 +390,17 @@ string TACGenerator::generate_expression(ASTNode *node)
     }
     else if (auto access = dynamic_cast<ArrayAccessNode *>(node))
     {
-        // Se base também é ArrayAccessNode, gera acesso 2D consolidado
+        // Geração sequencial: matriz[i][j] => tA = array_get matriz,i ; tB = array_get tA,j
         if (auto inner = dynamic_cast<ArrayAccessNode *>(access->base.get()))
         {
-            std::string baseBase = generate_expression(inner->base.get());
-            std::string innerIndex = generate_expression(inner->index.get());
-            std::string finalIndex = generate_expression(access->index.get());
+            // Primeiro gera o inner completo (se inner base também encadeado será recursivo)
+            std::string innerTemp = generate_expression(inner); // já retorna temp do acesso anterior
+            std::string idx2 = generate_expression(access->index.get());
             std::string result = new_temp();
-            instructions.push_back(TACInstruction(result, "array_get2", baseBase, innerIndex + ":" + finalIndex));
+            instructions.push_back(TACInstruction(result, "array_get", innerTemp, idx2));
             return result;
         }
+        // Caso simples 1D
         std::string baseTemp = generate_expression(access->base.get());
         std::string indexTemp = generate_expression(access->index.get());
         std::string result = new_temp();
