@@ -506,6 +506,11 @@ void TACGenerator::print_tac(std::ostream &out)
         {
             out << "print " << instr.arg1 << "\n";
         }
+        else if (instr.op == "print_last")
+        {
+            // Para o interpretador simples em emscripten, tratamos igual a print
+            out << "print " << instr.arg1 << "\n";
+        }
         else if (instr.op == "label")
         {
             out << instr.result << ":\n";

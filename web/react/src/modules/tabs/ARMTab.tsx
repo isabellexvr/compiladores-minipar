@@ -1,5 +1,5 @@
 // ARMTab.tsx - VERSÃO FINAL LIMPA
-import React from 'react';
+import React, { useState } from 'react';
 import './ARMTab.css';
 
 interface ARMTabProps {
@@ -8,6 +8,28 @@ interface ARMTabProps {
 }
 
 const ARMTab: React.FC<ARMTabProps> = ({ assemblyCode, className = '' }) => {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopyAll = async () => {
+        const text = assemblyCode.trim();
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(text);
+            } else {
+                // Fallback
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+            }
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1800);
+        } catch (e) {
+            console.error('Copy failed', e);
+        }
+    };
     const parseAssemblyCode = (code: string) => {
         if (!code) return [];
         
@@ -171,6 +193,15 @@ const ARMTab: React.FC<ARMTabProps> = ({ assemblyCode, className = '' }) => {
                     <span className="stat">{stats.total} linhas</span>
                     <span className="stat">{stats.instructions} instruções</span>
                     <span className="stat">{stats.directives} diretivas</span>
+                    <button
+                        type="button"
+                        className="arm-copy-btn"
+                        onClick={handleCopyAll}
+                        aria-label="Copiar todo o código ARM"
+                        title="Copiar todo o código ARM"
+                    >
+                        {copied ? '✅ Copiado' : '📋 Copiar'}
+                    </button>
                 </div>
             </div>
 
