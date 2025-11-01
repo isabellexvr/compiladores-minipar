@@ -16,6 +16,7 @@ static unordered_map<string, TokenType> keywords = {
     {"return", TokenType::RETURN},
     {"true", TokenType::TRUE},
     {"false", TokenType::FALSE},
+    {"COMP", TokenType::COMP},
     {"int", TokenType::INT},
     {"bool", TokenType::BOOL},
     {"string", TokenType::STRING},

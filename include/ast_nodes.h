@@ -94,6 +94,7 @@ struct SendNode : public ASTNode
 {
     std::string channelName;
     std::vector<std::unique_ptr<ASTNode>> arguments;
+    std::string component;
 
     void accept(ASTVisitor &visitor) override;
     std::string toString() const override;
@@ -103,6 +104,7 @@ struct ReceiveNode : public ASTNode
 {
     std::string channelName;
     std::vector<std::string> variables;
+    std::string component;
     void accept(ASTVisitor &visitor) override;
     std::string toString() const override;
 };

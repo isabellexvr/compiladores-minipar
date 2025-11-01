@@ -20,7 +20,7 @@ public:
     std::unordered_map<std::string, int> interpret(const std::vector<TACInstruction> &instrs, std::ostream &out);
 
 private:
-    std::unordered_map<std::string, int> env; // variáveis e temporários
+    std::unordered_map<std::string, int> env;            // variáveis e temporários
     std::unordered_map<std::string, std::string> envStr; // valores string
     std::unordered_map<std::string, ChannelRuntime> channels;
     // estado para construção de mensagem em envio
@@ -32,7 +32,7 @@ private:
     size_t expectedRecvArgs = 0;
     std::vector<int> receivedMessage;
 
-    int valueOf(const std::string &token) const; // resolve nome ou literal
+    int valueOf(const std::string &token) const;            // resolve nome ou literal
     std::string strValueOf(const std::string &token) const; // resolve string
     void finalizeSend();
     void finalizeReceive();

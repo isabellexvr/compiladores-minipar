@@ -90,7 +90,7 @@ void ASTPrinter::visit(InputNode &node)
 
 void ASTPrinter::visit(SendNode &node)
 {
-    printLine("Send: " + node.channelName);
+    printLine("Send: " + node.channelName + (node.component.empty() ? "" : " from=" + node.component));
     indentLevel++;
     for (auto &arg : node.arguments)
     {
@@ -101,7 +101,7 @@ void ASTPrinter::visit(SendNode &node)
 
 void ASTPrinter::visit(ReceiveNode &node)
 {
-    printLine("Receive: " + node.channelName);
+    printLine("Receive: " + node.channelName + (node.component.empty() ? "" : " from=" + node.component));
     for (const auto &var : node.variables)
     {
         printLine("  -> " + var);

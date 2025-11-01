@@ -19,6 +19,7 @@ enum TokenType
     RETURN,
     TRUE,
     FALSE,
+    COMP,
     // Tipos
     INT,
     BOOL,
@@ -42,10 +43,10 @@ enum TokenType
     GREATER,       // >
     GREATER_EQUAL, // >=
                    // Operadores lógicos
-    AND, // &&
-    OR,  // ||
-    NOT, // !
-         // Delimitadores
+    AND,           // &&
+    OR,            // ||
+    NOT,           // !
+                   // Delimitadores
     LPAREN,
     RPAREN,
     LBRACE,

@@ -1,11 +1,11 @@
-# Programa com operacao como string
+# Divisao via string
 c_channel calculadora computador_1 computador_2
 
 COMP computador_1
 SEQ
-  operacao = "+";
-  valor1 = 9;
-  valor2 = 4;
+  operacao = "/";
+  valor1 = 20;
+  valor2 = 5;
   resultado = 0;
   calculadora.send(operacao, valor1, valor2, resultado);
 

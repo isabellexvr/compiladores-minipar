@@ -61,14 +61,14 @@ std::string InputNode::toString() const
 void SendNode::accept(ASTVisitor &visitor) { visitor.visit(*this); }
 std::string SendNode::toString() const
 {
-    return "Send(" + channelName + ", " + std::to_string(arguments.size()) + " args)";
+    return "Send(" + channelName + ", " + std::to_string(arguments.size()) + " args, comp=" + (component.empty() ? "?" : component) + ")";
 }
 
 // ReceiveNode
 void ReceiveNode::accept(ASTVisitor &visitor) { visitor.visit(*this); }
 std::string ReceiveNode::toString() const
 {
-    return "Receive(" + channelName + ", " + std::to_string(variables.size()) + " vars)";
+    return "Receive(" + channelName + ", " + std::to_string(variables.size()) + " vars, comp=" + (component.empty() ? "?" : component) + ")";
 }
 
 // IfNode

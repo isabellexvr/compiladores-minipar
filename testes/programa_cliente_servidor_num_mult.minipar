@@ -1,11 +1,11 @@
-# Programa com operacao como string
+# Multiplicacao via codigo numerico (3=*)
 c_channel calculadora computador_1 computador_2
 
 COMP computador_1
 SEQ
-  operacao = "+";
-  valor1 = 9;
-  valor2 = 4;
+  operacao = 3;
+  valor1 = 7;
+  valor2 = 6;
   resultado = 0;
   calculadora.send(operacao, valor1, valor2, resultado);
 

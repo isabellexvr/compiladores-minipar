@@ -11,6 +11,8 @@ struct ChannelArityInfo
 {
     std::vector<int> sendArities;
     std::vector<int> recvArities;
+    std::vector<std::string> sendComponents;
+    std::vector<std::string> recvComponents;
 };
 
 // Analisa a AST coletando aridades de send/receive por canal e reporta inconsistências.

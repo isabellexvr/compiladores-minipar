@@ -11,11 +11,13 @@ class Parser
 private:
     std::vector<Token> tokens;
     size_t current_token;
+    std::string currentComponent;
 
     Token &current();
     Token &peek();
     void consume();
     bool match(TokenType type);
+    void setComponent(const std::string &name);
 
     std::unique_ptr<ASTNode> parse_statement();
     std::unique_ptr<ASTNode> parse_expression();

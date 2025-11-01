@@ -23,12 +23,14 @@ static void walk(ASTNode *node, std::unordered_map<std::string, ChannelArityInfo
     else if (auto send = dynamic_cast<SendNode *>(node))
     {
         map[send->channelName].sendArities.push_back((int)send->arguments.size());
+        map[send->channelName].sendComponents.push_back(send->component);
         for (auto &a : send->arguments)
             walk(a.get(), map);
     }
     else if (auto recv = dynamic_cast<ReceiveNode *>(node))
     {
         map[recv->channelName].recvArities.push_back((int)recv->variables.size());
+        map[recv->channelName].recvComponents.push_back(recv->component);
     }
     else if (auto f = dynamic_cast<FunctionDeclNode *>(node))
     {
@@ -115,6 +117,30 @@ void analyze_channel_arities(ProgramNode *program, std::ostream &out)
                 break;
             }
         bool match = (!ci.sendArities.empty() && !ci.recvArities.empty() && sendCons && recvCons && ci.sendArities[0] == ci.recvArities[0]);
+        out << " comps_send=";
+        if (ci.sendComponents.empty())
+            out << "-";
+        else
+        {
+            for (size_t i = 0; i < ci.sendComponents.size(); ++i)
+            {
+                if (i)
+                    out << ",";
+                out << ci.sendComponents[i];
+            }
+        }
+        out << " comps_recv=";
+        if (ci.recvComponents.empty())
+            out << "-";
+        else
+        {
+            for (size_t i = 0; i < ci.recvComponents.size(); ++i)
+            {
+                if (i)
+                    out << ",";
+                out << ci.recvComponents[i];
+            }
+        }
         out << " => ";
         if (match)
             out << "OK (arity=" << ci.sendArities[0] << ")";

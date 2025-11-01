@@ -1,9 +1,9 @@
-# Programa com operacao como string
+# Subtracao via string
 c_channel calculadora computador_1 computador_2
 
 COMP computador_1
 SEQ
-  operacao = "+";
+  operacao = "-";
   valor1 = 9;
   valor2 = 4;
   resultado = 0;

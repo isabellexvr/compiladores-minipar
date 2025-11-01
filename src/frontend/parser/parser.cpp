@@ -5,7 +5,7 @@
 using namespace std;
 
 Parser::Parser(const vector<Token> &tokens)
-    : tokens(tokens), current_token(0) {}
+    : tokens(tokens), current_token(0), currentComponent("") {}
 
 Token &Parser::current()
 {
@@ -36,12 +36,27 @@ bool Parser::match(TokenType type)
     return current().type == type;
 }
 
+void Parser::setComponent(const std::string &name)
+{
+    currentComponent = name;
+}
+
 unique_ptr<ProgramNode> Parser::parse()
 {
     auto program = make_unique<ProgramNode>();
 
     while (!match(END))
     {
+        if (match(COMP))
+        {
+            consume();
+            if (match(IDENTIFIER))
+            {
+                setComponent(current().value);
+                consume();
+            }
+            continue;
+        }
         if (match(C_CHANNEL))
         {
             // c_channel name comp1 comp2
@@ -204,6 +219,7 @@ unique_ptr<ASTNode> Parser::parse_statement()
             {
                 auto sendNode = make_unique<SendNode>();
                 sendNode->channelName = channelName;
+                sendNode->component = currentComponent;
                 if (match(LPAREN))
                 {
                     consume();
@@ -233,6 +249,7 @@ unique_ptr<ASTNode> Parser::parse_statement()
             {
                 auto recvNode = make_unique<ReceiveNode>();
                 recvNode->channelName = channelName;
+                recvNode->component = currentComponent;
                 if (match(LPAREN))
                 {
                     consume();
