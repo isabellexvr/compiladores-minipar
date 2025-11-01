@@ -26,31 +26,70 @@ string read_file(const string &filename)
     return buffer.str();
 }
 
-static std::string timestamp_iso_utc(){
+static std::string timestamp_iso_utc()
+{
     auto now = std::chrono::system_clock::now();
     auto t = std::chrono::system_clock::to_time_t(now);
-    std::tm tm{}; gmtime_r(&t,&tm);
-    std::ostringstream oss; oss<<std::put_time(&tm, "%Y-%m-%dT%H:%M:%SZ");
+    std::tm tm{};
+    gmtime_r(&t, &tm);
+    std::ostringstream oss;
+    oss << std::put_time(&tm, "%Y-%m-%dT%H:%M:%SZ");
     return oss.str();
 }
 
-static std::string token_category(TokenType t){
-    switch(t){
-        case TokenType::SEQ: case TokenType::PAR: case TokenType::IF: case TokenType::ELSE: case TokenType::WHILE: case TokenType::PRINT: case TokenType::INPUT: return "KEYWORD";
-        case TokenType::IDENTIFIER: return "IDENTIFIER";
-        case TokenType::NUMBER: case TokenType::STRING_LITERAL: return "LITERAL";
-        case TokenType::PLUS: case TokenType::MINUS: case TokenType::MULTIPLY: case TokenType::DIVIDE: case TokenType::ASSIGN: case TokenType::EQUAL: case TokenType::NOT_EQUAL: case TokenType::LESS: case TokenType::LESS_EQUAL: case TokenType::GREATER: case TokenType::GREATER_EQUAL: return "OPERATOR";
-        case TokenType::LPAREN: case TokenType::RPAREN: case TokenType::LBRACE: case TokenType::RBRACE: case TokenType::SEMICOLON: case TokenType::COMMA: return "DELIMITER";
-        case TokenType::END: return "END";
-        default: return "UNKNOWN";
+static std::string token_category(TokenType t)
+{
+    switch (t)
+    {
+    case TokenType::SEQ:
+    case TokenType::PAR:
+    case TokenType::IF:
+    case TokenType::ELSE:
+    case TokenType::WHILE:
+    case TokenType::PRINT:
+    case TokenType::INPUT:
+        return "KEYWORD";
+    case TokenType::IDENTIFIER:
+        return "IDENTIFIER";
+    case TokenType::NUMBER:
+    case TokenType::STRING_LITERAL:
+        return "LITERAL";
+    case TokenType::PLUS:
+    case TokenType::MINUS:
+    case TokenType::MULTIPLY:
+    case TokenType::DIVIDE:
+    case TokenType::ASSIGN:
+    case TokenType::EQUAL:
+    case TokenType::NOT_EQUAL:
+    case TokenType::LESS:
+    case TokenType::LESS_EQUAL:
+    case TokenType::GREATER:
+    case TokenType::GREATER_EQUAL:
+        return "OPERATOR";
+    case TokenType::LPAREN:
+    case TokenType::RPAREN:
+    case TokenType::LBRACE:
+    case TokenType::RBRACE:
+    case TokenType::SEMICOLON:
+    case TokenType::COMMA:
+        return "DELIMITER";
+    case TokenType::END:
+        return "END";
+    default:
+        return "UNKNOWN";
     }
 }
 
-int main(int argc, char *argv[]){
-    if(argc!=2){
-        std::cout << "Uso: " << argv[0] << " <arquivo.minipar>" << std::endl; return 1; }
+int main(int argc, char *argv[])
+{
+    if (argc != 2)
+    {
+        std::cout << "Uso: " << argv[0] << " <arquivo.minipar>" << std::endl;
+        return 1;
+    }
     std::string source_code = read_file(argv[1]);
-    if(source_code.empty()) return 1;
+    if (source_code.empty())
+        return 1;
 
     // Header estilo phases
     std::cout << "=== COMPILATION METADATA ===\n";
@@ -64,42 +103,93 @@ int main(int argc, char *argv[]){
     std::cout << "\n=== LEXICAL ===\n";
     std::cout << "totalTokens: " << tokens.size() << "\n";
     std::cout << "Tokens (type/category/value@line:col)\n";
-    for(const auto &tk: tokens){
-        std::cout << static_cast<int>(tk.type) << "/" << token_category(tk.type) << "/'" << tk.value << "'@" << tk.line << ':' << tk.column << "\n"; }
+    for (const auto &tk : tokens)
+    {
+        std::cout << static_cast<int>(tk.type) << "/" << token_category(tk.type) << "/'" << tk.value << "'@" << tk.line << ':' << tk.column << "\n";
+    }
 
     Parser parser(tokens);
     auto ast = parser.parse();
-    bool success = ast!=nullptr;
+    bool success = ast != nullptr;
 
-    std::cout << "\n=== SYNTAX ===\nstatus: " << (success?"SUCCESS":"ERROR") << "\n";
-    if(success){
-        ASTPrinter printer; std::cout << "AST:\n" << printer.print(*ast) << "\n"; }
+    std::cout << "\n=== SYNTAX ===\nstatus: " << (success ? "SUCCESS" : "ERROR") << "\n";
+    if (success)
+    {
+        ASTPrinter printer;
+        std::cout << "AST:\n"
+                  << printer.print(*ast) << "\n";
+    }
 
     std::cout << "\n=== SEMANTIC ===\n";
     SymbolTable symtab;
-    if(success){ build_symbol_table(ast.get(), symtab); }
+    if (success)
+    {
+        build_symbol_table(ast.get(), symtab);
+    }
     auto all = symtab.get_all_symbols();
     std::cout << "symbols: " << all.size() << "\n";
-    for(const auto &s: all){
+    for (const auto &s : all)
+    {
         std::string stype;
-        switch(s.type){ case SymbolType::VARIABLE: stype="VARIABLE"; break; case SymbolType::FUNCTION: stype="FUNCTION"; break; case SymbolType::CHANNEL: stype="CHANNEL"; break; }
-        std::cout << s.name << " | " << stype << " | " << (s.data_type.empty()?"int":s.data_type) << " | scope=global\n"; }
+        switch (s.type)
+        {
+        case SymbolType::VARIABLE:
+            stype = "VARIABLE";
+            break;
+        case SymbolType::FUNCTION:
+            stype = "FUNCTION";
+            break;
+        case SymbolType::CHANNEL:
+            stype = "CHANNEL";
+            break;
+        }
+        std::cout << s.name << " | " << stype << " | " << (s.data_type.empty() ? "int" : s.data_type) << " | scope=global\n";
+    }
 
     std::cout << "\n=== INTERMEDIATE (TAC) ===\n";
     std::vector<TACInstruction> tac;
-    if(success){ TACGenerator gen; tac = gen.generate(static_cast<ProgramNode*>(ast.get())); }
+    if (success)
+    {
+        TACGenerator gen;
+        tac = gen.generate(static_cast<ProgramNode *>(ast.get()));
+    }
     std::cout << "instructions: " << tac.size() << "\n";
-    for(const auto &i: tac){
+    for (const auto &i : tac)
+    {
         std::string opType;
-        if(i.op=="print") opType="PRINT"; else if(i.op=="label") opType="LABEL"; else if(i.op=="if_false") opType="CONDITIONAL_JUMP"; else if(i.op=="goto") opType="JUMP"; else if(i.op.empty()) opType="ASSIGN"; else opType="BINARY"; 
-        std::cout << i.result << " = (" << i.op << ") " << i.arg1 << (i.arg2.empty()?"":" , ") << i.arg2 << " | type=" << opType << "\n"; }
+        if (i.op == "print")
+            opType = "PRINT";
+        else if (i.op == "label")
+            opType = "LABEL";
+        else if (i.op == "if_false")
+            opType = "CONDITIONAL_JUMP";
+        else if (i.op == "goto")
+            opType = "JUMP";
+        else if (i.op.empty())
+            opType = "ASSIGN";
+        else
+            opType = "BINARY";
+        std::cout << i.result << " = (" << i.op << ") " << i.arg1 << (i.arg2.empty() ? "" : " , ") << i.arg2 << " | type=" << opType << "\n";
+    }
 
     std::cout << "\n=== CODEGEN (ARMv7) ===\n";
-    if(success){ ARMGenerator arm; auto code = arm.generate(tac); for(const auto &line: code) std::cout << line << "\n"; }
+    if (success)
+    {
+        ARMGenerator arm;
+        auto code = arm.generate(tac);
+        for (const auto &line : code)
+            std::cout << line << "\n";
+    }
 
     // Opcional: Execução simulada
     std::cout << "\n=== EXECUTION (SIMULATED) ===\n";
-    if(success){ TACGenerator gen; std::stringstream ss; gen.generate(static_cast<ProgramNode*>(ast.get())); gen.print_tac(ss); /* Could reuse print_tac modification */ }
-    std::cout << "done: " << (success?"0":"1") << "\n";
-    return success?0:1;
+    if (success)
+    {
+        TACGenerator gen;
+        std::stringstream ss;
+        gen.generate(static_cast<ProgramNode *>(ast.get()));
+        gen.print_tac(ss); /* Could reuse print_tac modification */
+    }
+    std::cout << "done: " << (success ? "0" : "1") << "\n";
+    return success ? 0 : 1;
 }

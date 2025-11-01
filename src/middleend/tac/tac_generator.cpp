@@ -82,7 +82,7 @@ void TACGenerator::generate_statement(ASTNode *stmt)
 
         // Gerar condição
         string cond_temp = generate_expression(while_node->condition.get());
-        
+
         // if_false cond_temp goto end_label
         instructions.push_back(TACInstruction("", "if_false", cond_temp, end_label));
 
@@ -145,10 +145,10 @@ string TACGenerator::generate_expression(ASTNode *node)
         case TokenType::DIVIDE:
             op = "/";
             break;
-    case TokenType::EQUAL:
+        case TokenType::EQUAL:
             op = "==";
             break;
-    case TokenType::NOT_EQUAL:
+        case TokenType::NOT_EQUAL:
             op = "!=";
             break;
         case TokenType::LESS:
