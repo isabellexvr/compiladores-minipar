@@ -45,72 +45,191 @@ web/react/                → Frontend em React + integração wasm
 include/                  → Headers públicos
 ```
 Fluxo resumido:
-```
-Código Fonte → Lexer → Tokens → Parser → AST → SymbolTable
-          → TACGenerator → TAC → ARMGenerator → Código ARM
-```
+## 🧩 Features Implementadas
+Léxico / Sintático
+- Palavras‑chave: `seq`, `par`, `while`, `if`, `else`, `print`, `input`, `fun`, `return`, `true`, `false`, `c_channel`, tipos básicos (`int`, `bool`, `string`).
+- Literais: inteiros, floats (`d+.d+`), strings com escape de aspas (`"`), booleanos, arrays literais (`[1, 2, 3]`, aninhados `[[1,2],[3,4]]`).
+- Operadores: aritméticos `+ - * /`, comparação `== != < <= > >=`, lógicos `&& || !`, unário `-`.
+- Identificadores case‑insensitive para palavras‑chave (normalização para minúsculas no lexer).
 
-## 🔄 Fluxo de Compilação (Nativo)
-```bash
-make            # compila versão nativa (binário: compilador)
-./compilador teste_simples.minipar
+AST / Linguagem
+- Atribuição, múltiplos `print` na mesma linha (separados e `print_last` no final), `while`, `if / else`, blocos `SEQ { ... }` e listas após `SEQ` sem chaves, bloco paralelo `PAR` (placeholder sem semântica de concorrência ainda), funções (`fun nome(params){ ... }`) com `return` explícito ou implícito.
+- Arrays heterogêneos (mistura de ints, floats, strings e sub‑arrays) com acesso encadeado `matriz[i][j]` e atribuição de elemento `arr[i] = valor`.
+- Declaração de canais: `c_channel nome compA compB` e primitivas `canal.send(expr1, expr2, ...)` / `canal.receive(a, b, ...)` já produzindo TAC (execução ainda simulada heurísticamente no interpretador).
+
+Código Intermediário (TAC)
+- Instruções suportadas (além das aritméticas / controle): `array_init`, `array_set`, `array_get`, `array_concat`, `call`, `return`, `param`, `send`, `send_arg`, `receive`, `recv_arg`, `print`, `print_last`.
+- Heurística de detecção de concatenação de arrays via `+` entre resultados de construções de array gera `array_concat` para visualização explícita.
+- Estrutura de funções gera label de entrada, parâmetros (`param`), corpo, label determinístico de retorno e instrução `return` final consolidada.
+
+Tabela de Símbolos
+- Registra variáveis, funções e tenta inferir tipo básico (`int`, `float`, `string`, `bool`) a partir das expressões / literais encontrados (placeholder para futura análise semântica aprofundada e escopos léxicos).
+
+Interpretador de TAC (Runtime Educacional)
+- Executa instruções TAC imprimindo saída, avaliando expressões, loops, condicionais, funções (pilha de chamadas), arrays (numéricos, strings, aninhados) e concatenação.
+- Simulação parcial de canais: acumula mensagens em filas por canal (`send` / `receive`) e faz binding dos valores recebidos às variáveis listadas (com pequena heurística de operação exemplo).
+
+Strings & Arrays
+- Armazenamento paralelo de valores numéricos e strings por índice em arrays; preserva referências de sub‑arrays para permitir acesso multidimensional e impressão legível.
+
+Emscripten / Web
+- Exportação das funções: `_compile_minipar` (texto completo), `_compile_minipar_json` (artefatos estruturados em JSON: tokens categorizados, AST, tabela, TAC, ARM), `_compile_minipar_tac` (somente TAC JSON), `_free_string` (liberação de memória alocada).
+- JSON de tokens inclui versão “única” categorizada para reduzir ruído.
+
+Debug & DX
+- Macro condicional `MINIPAR_DEBUG` silencia logs de depuração de parser, gerador de TAC e interpretador por padrão (ativar com `CXXFLAGS+=-DMINIPAR_DEBUG`).
+- Makefile para build nativo e Makefile.emscripten alinhados (incluindo subdiretórios de middleend/runtime).
+
+Frontend React
+- Abas: Tokens, Syntax Tree (AST), Symbol Table, TAC (com classificação de instruções), ARM, além de visualização textual consolidada.
 ```
-Saída inclui seções:
-```
-=== ANALISADOR LÉXICO ===
 === ANALISADOR SINTÁTICO ===
 === TABELA DE SÍMBOLOS ===
-=== ÁRVORE SINTÁTICA ===
-=== CÓDIGO DE TRÊS ENDEREÇOS ===
-=== CÓDIGO ASSEMBLY ARMv7 ===
-```
-
-## 🌐 Execução no Navegador (Emscripten + React)
-### Build Wasm
-```bash
-make -f Makefile.emscripten
-```
-Gera `compilador.wasm` + loader JS (MODULARIZE) usados pelo React em `web/react`. 
-
-### Integração Emscripten
-Funções exportadas (via `EXPORTED_FUNCTIONS`):
-- `_compile_minipar` → Saída textual completa (todas as seções).
-- `_compile_minipar_json` → Artefatos estruturados (tokens, TAC, ARM, símbolos).
-- `_compile_minipar_tac` → Apenas TAC em JSON (com classificação de instruções).
-- `_free_string` → Liberação de memória alocada do lado C++.
-
-Uso no frontend (simplificado):
-```ts
-const compileFn = module.cwrap('compile_minipar', 'number', ['string']);
-const ptr = compileFn(source);
-const text = module.UTF8ToString(ptr);
-module._free_string(ptr);
-```
-
-### Frontend React
-- Carrega o módulo wasm assíncrono (`createCompilerModule`).
-- Após compilação, extrai seções do texto bruto ou usa JSON estruturado.
-- Apresenta cada artefato em uma aba (estilo terminal escuro com paleta definida).
-
 ## 📦 Código Intermediário (TAC)
-Exemplo gerado:
+Exemplos (anotados):
 ```
-x = 10
-y = 20
-t0 = x + y
-resultado = t0
-print resultado
-```
-Controle de fluxo (`while`):
-```
+// Aritmética & atribuição
+t0 = 10
+t1 = 20
+t2 = t0 + t1
+resultado = t2
+
+// While
 L0:
-if_false t0 goto L1
-... corpo ...
+if_false t3 goto L1
+  ... corpo ...
 goto L0
 L1:
-```
-Cada instrução possui classificação (`ASSIGNMENT`, `BINARY_OP`, `PRINT`, `LABEL`, `CONDITIONAL_JUMP`, `JUMP`) para facilitar visualização no UI.
 
+// If / Else
+if_false t4 goto L_else
+  ... then ...
+goto L_end
+L_else:
+  ... else ...
+L_end:
+
+// Função
+goto L_afterFuncs
+f:
+  param a
+  param b
+  ... corpo ...
+L_return_f:
+  return retval
+L_afterFuncs:
+
+// Arrays
+t5 = array_init 3
+t5[0] = t0
+t5[1] = t1
+t5[2] = t2
+t6 = array_get t5[1]
+t7 = concat t5, t8        // via array_concat
+
+// Canais (exemplo)
+send canal count=2
+canal[0] <= t9            // send_arg
+canal[1] <= t10
+receive canal count=2
+x = recv canal[0]         // recv_arg
+y = recv canal[1]
+```
+Principais instruções: `label`, `goto`, `if_false`, `=`, operadores binários, `print` / `print_last`, `array_init`, `array_set`, `array_get`, `array_concat`, `call`, `param`, `return`, `send`, `send_arg`, `receive`, `recv_arg`.
+
+Classificação exibida na UI auxilia em filtros e coloração (ex.: controle de fluxo, operação binária, array, chamada, E/S de canal).
+### Integração Emscripten
+## 📚 Estrutura da Linguagem (Atualizada e Simplificada)
+```
+Program        → (ComponentDecl | ChannelDecl | FunctionDecl | Block | Statement)* EOF
+ComponentDecl  → 'comp' IDENT
+ChannelDecl    → 'c_channel' IDENT IDENT IDENT
+FunctionDecl   → 'fun' IDENT '(' ParamList? ')' ( '{' BlockItems '}' | Statement )
+ParamList      → IDENT (',' IDENT)*
+Block          → 'SEQ' ('{' BlockItems '}' | BlockItemsNoBrace)
+ParallelBlock  → 'PAR' ( 'SEQ' ... )+
+BlockItems     → (Statement | Block | If | While)*
+Statement      → Assignment | Print | Input | While | If | Return | Call | ArrayAssignment | ChannelSend | ChannelReceive
+Assignment     → IDENT '=' Expression ';'?
+ArrayAssignment→ IDENT '[' Expression ']' '=' Expression ';'?
+Print          → 'print' Expression (',' Expression)* ';'?
+Input          → 'input' IDENT ';'?
+While          → 'while' '(' Expression ')' (Block | Statement)
+If             → 'if' '('? Expression ')'?(Block | Statement) ('else' (Block | Statement))?
+Return         → 'return' Expression? ';'?
+Call           → IDENT '(' ArgList? ')' ';'?
+ChannelSend    → IDENT '.' 'send' '(' ArgList? ')' ';'?
+ChannelReceive → IDENT '.' 'receive' '(' IdentList? ')' ';'?
+ArgList        → Expression (',' Expression)*
+IdentList      → IDENT (',' IDENT)*
+Expression     → OrExpr
+OrExpr         → AndExpr ( '||' AndExpr )*
+AndExpr        → CmpExpr ( '&&' CmpExpr )*
+CmpExpr        → AddExpr ( ( '==' | '!=' | '<' | '<=' | '>' | '>=' ) AddExpr )*
+AddExpr        → MulExpr ( ( '+' | '-' ) MulExpr )*
+MulExpr        → Unary ( ( '*' | '/' ) Unary )*
+Unary          → ( '!' | '-' ) Unary | Primary
+Primary        → NUMBER | FLOAT | STRING_LITERAL | 'true' | 'false' | IDENT ( CallArgs | ArrayAccessChain )? | ArrayLiteral | '(' Expression ')' ArrayAccessChain?
+ArrayLiteral   → '[' (Expression (',' Expression)*)? ']'
+ArrayAccessChain → ('[' Expression ']')*
+```
+
+Observações:
+- Palavras‑chave em minúsculas; identificadores de usuário preservam caixa original apenas para exibição.
+- `;` ainda opcional em muitos finais de instrução (tolerante para experimentação em ambiente educacional).
+- Concatenação de arrays por `+` detectada quando ambos operandos são construções de array (heurística atual).
+const text = module.UTF8ToString(ptr);
+- Carrega o módulo wasm assíncrono (`createCompilerModule`).
+## 🧪 Teste Rápido
+Entrada:
+```
+SEQ {
+  x = 10
+  y = 20
+  arr = [x, y, 30]
+  z = (x + y) * 2
+  print x, y, z
+}
+```
+Trecho TAC resultante (resumido):
+```
+t0 = 10
+t1 = 20
+arr = array_init 3
+arr[0] = t0
+arr[1] = t1
+arr[2] = t2
+t3 = arr[1]
+t4 = t0 + t1
+t5 = t4 * t6
+print t0
+print t1
+print_last t5
+```
+Execução imprime: `10 20 <valor>`.
+
+Ative logs de depuração (opcional) adicionando a flag:
+```
+make CXXFLAGS="-DMINIPAR_DEBUG -O0 -g"
+```
+```
+## 🚧 Roadmap / Próximos Passos
+- [x] `IF / ELSE` básico
+- [x] Funções + retorno
+- [x] Arrays heterogêneos e aninhados
+- [x] Strings literais & booleans
+- [x] Concatenação de arrays (heurística)
+- [x] Operações de canal (parser + TAC stub)
+- [ ] Semântica de execução real para `PAR` (threads / scheduling) & canais bloqueantes
+- [ ] Escopos léxicos / shadowing / ambientes por função
+- [ ] Tipagem mais forte e inferência estática (numérica vs string vs array)
+- [ ] Otimizações TAC (propagação de constantes, DCE, folding, eliminação de temporários redundantes)
+- [ ] Expansão ARM: comparações, saltos condicionais, chamadas de função (stack frame), arrays
+- [ ] Testes automatizados (lexer, parser, TAC, interpreter) e CI
+- [ ] Visualização gráfica de fluxo (CFG) e animação de execução
+- [ ] Erros léxicos/sintáticos estruturados (diagnostics JSON)
+- [ ] Token de erro explícito para caracteres desconhecidos
+Educacional. Focado em clareza de fases e visualização dos artefatos. Expandir gradualmente mantendo separação limpa entre frontend, middleend e backend. Para novas contribuições priorize: (1) correção / cobertura de testes, (2) semântica de canais / PAR, (3) otimizações, (4) estender backend ARM.
 ## 🗂 Tabela de Símbolos
 Construída por travessia simples da AST. Registra identificadores como `VAR` com tipo inferido básico (placeholder `int`). Futuras expansões: escopos, canais, funções, tipos compostos.
 

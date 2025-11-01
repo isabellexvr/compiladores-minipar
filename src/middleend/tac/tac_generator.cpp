@@ -2,9 +2,16 @@
 #include "ast_nodes.h"
 #include <iostream>
 #ifdef MINIPAR_DEBUG
-#define DBG(msg) do { std::cerr << msg; } while(0)
+#define DBG(msg)          \
+    do                    \
+    {                     \
+        std::cerr << msg; \
+    } while (0)
 #else
-#define DBG(msg) do {} while(0)
+#define DBG(msg) \
+    do           \
+    {            \
+    } while (0)
 #endif
 
 using namespace std;

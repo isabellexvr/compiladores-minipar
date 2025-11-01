@@ -2,9 +2,16 @@
 #include <iostream>
 #include <sstream>
 #ifdef MINIPAR_DEBUG
-#define DBG(msg) do { std::cerr << msg; } while(0)
+#define DBG(msg)          \
+    do                    \
+    {                     \
+        std::cerr << msg; \
+    } while (0)
 #else
-#define DBG(msg) do {} while(0)
+#define DBG(msg) \
+    do           \
+    {            \
+    } while (0)
 #endif
 
 using namespace std;
@@ -209,11 +216,11 @@ unique_ptr<SeqNode> Parser::parse_seq_block()
     {
         consume();
         hasBrace = true;
-    DBG("[PARSE] enter SEQ block with '{' at token index=" << current_token << "\n");
+        DBG("[PARSE] enter SEQ block with '{' at token index=" << current_token << "\n");
     }
     else
     {
-    DBG("[PARSE] enter SEQ block without '{' at token index=" << current_token << "\n");
+        DBG("[PARSE] enter SEQ block without '{' at token index=" << current_token << "\n");
     }
     while (!match(END))
     {
