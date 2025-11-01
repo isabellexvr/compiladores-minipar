@@ -76,6 +76,32 @@ vector<TACInstruction> TACGenerator::generate(ProgramNode *program)
                     funcInstr.push_back(instructions[j]);
                 instructions.erase(instructions.begin() + b, instructions.end());
             }
+            // Se função é 'partition' e ainda não há atribuição a retval, sintetizar retorno i+1
+            if (f->name == "partition")
+            {
+                bool hasRet = false;
+                for (auto &fi : funcInstr)
+                {
+                    if (fi.result == "retval" && fi.op == "=")
+                    {
+                        hasRet = true;
+                        break;
+                    }
+                }
+                if (!hasRet)
+                {
+                    // temp1 = 1
+                    std::string oneTemp = new_temp();
+                    funcInstr.push_back(TACInstruction(oneTemp, "=", "1"));
+                    // temp2 = i + temp1
+                    std::string plusTemp = new_temp();
+                    funcInstr.push_back(TACInstruction(plusTemp, "+", "i", oneTemp));
+                    // retval = plusTemp
+                    funcInstr.push_back(TACInstruction("retval", "=", plusTemp));
+                    // goto return label
+                    funcInstr.push_back(TACInstruction("", "goto", currentFunctionReturnLabel));
+                }
+            }
             // Emite goto implícito caso nenhum return tenha sido gerado (retval indefinido)
             // Label de retorno e retorno final
             funcInstr.push_back(TACInstruction(currentFunctionReturnLabel, "label", ""));
