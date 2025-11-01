@@ -331,8 +331,41 @@ string TACGenerator::generate_expression(ASTNode *node)
             op = "?";
             break;
         }
-
-        instructions.push_back(TACInstruction(temp, op, left, right));
+        // Detecção simples de concatenação de arrays: se operador '+' e ambos operandos foram produzidos por 'array_init' ou 'array_set' temporários.
+        // Heurística: se nome começa com 't' (temp) e já tivemos uma instrução anterior que define esse temp com op 'array_init' ou '=' de outro array.
+        bool isPlus = (bin_op->op == TokenType::PLUS);
+        auto isArrayTemp = [&](const std::string &name)
+        {
+            // var global (identificador) pode ser array também; aceitaremos qualquer identificador cuja última definição tenha sido 'array_init'.
+            for (auto it = instructions.rbegin(); it != instructions.rend(); ++it)
+            {
+                if (it->result == name)
+                {
+                    if (it->op == "array_init" || it->op == "array_set")
+                        return true;
+                    // Se foi cópia '=', checar origem
+                    if (it->op == "=" && !it->arg1.empty())
+                    {
+                        // procura definição original do arg1
+                        for (auto it2 = instructions.rbegin(); it2 != instructions.rend(); ++it2)
+                        {
+                            if (it2->result == it->arg1 && it2->op == "array_init")
+                                return true;
+                        }
+                    }
+                    return false;
+                }
+            }
+            return false;
+        };
+        if (isPlus && isArrayTemp(left) && isArrayTemp(right))
+        {
+            instructions.push_back(TACInstruction(temp, "array_concat", left, right));
+        }
+        else
+        {
+            instructions.push_back(TACInstruction(temp, op, left, right));
+        }
         return temp;
     }
     else if (auto un = dynamic_cast<UnaryOpNode *>(node))
@@ -469,6 +502,10 @@ void TACGenerator::print_tac(std::ostream &out)
         else if (instr.op == "array_get")
         {
             out << instr.result << " = " << instr.arg1 << "[" << instr.arg2 << "]\n";
+        }
+        else if (instr.op == "array_concat")
+        {
+            out << instr.result << " = concat " << instr.arg1 << ", " << instr.arg2 << "\n";
         }
         else
         {

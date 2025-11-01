@@ -298,32 +298,39 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
         }
         else if (ins.op == "print" || ins.op == "print_last")
         {
-            // Prioridade: string literal/var, depois float, depois int. Se for temp de array com string no índice anterior, já resolvido antes.
-            if (envStr.find(ins.arg1) != envStr.end())
+            // Nova prioridade: arrays primeiro (para evitar imprimir temp de referência), depois string, float, int, literal fallback.
+            if (arrays.find(ins.arg1) != arrays.end())
             {
-                out << envStr[ins.arg1];
-            }
-            else if (arrays.find(ins.arg1) != arrays.end())
-            {
-                // Imprime array: primeiro tenta strings, senão valores numéricos
                 bool hasString = arraysStr.count(ins.arg1) && !arraysStr[ins.arg1].empty();
                 size_t sz = arrays[ins.arg1].size();
+                out << "[";
                 for (size_t k = 0; k < sz; ++k)
                 {
                     if (hasString && k < arraysStr[ins.arg1].size() && !arraysStr[ins.arg1][k].empty())
+                    {
                         out << arraysStr[ins.arg1][k];
+                    }
+                    else if (arraysNested.count(ins.arg1) && k < arraysNested[ins.arg1].size() && !arraysNested[ins.arg1][k].empty())
+                    {
+                        // Representar subarray por nome entre '<>' para depuração
+                        out << "<" << arraysNested[ins.arg1][k] << ">";
+                    }
                     else
                     {
                         double v = arrays[ins.arg1][k];
-                        // decide formato (se tem parte fracionaria significativa)
                         if (v == (int)v)
                             out << (int)v;
                         else
                             out << v;
                     }
                     if (k + 1 < sz)
-                        out << " ";
+                        out << ", ";
                 }
+                out << "]";
+            }
+            else if (envStr.find(ins.arg1) != envStr.end())
+            {
+                out << envStr[ins.arg1];
             }
             else if (envF.find(ins.arg1) != envF.end())
             {
@@ -335,7 +342,6 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
             }
             else
             {
-                // Se não está em nenhum ambiente, tratar como literal string crua (ex: "Usuario:")
                 out << ins.arg1;
             }
             if (ins.op == "print_last")
@@ -381,6 +387,42 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
             else
             {
                 env[ins.result] = 0;
+            }
+        }
+        else if (ins.op == "array_concat")
+        {
+            // Concatenação explícita emitida pelo gerador
+            if (arrays.count(ins.arg1) && arrays.count(ins.arg2))
+            {
+                const auto &A = arrays[ins.arg1];
+                const auto &B = arrays[ins.arg2];
+                std::vector<double> merged;
+                merged.reserve(A.size() + B.size());
+                merged.insert(merged.end(), A.begin(), A.end());
+                merged.insert(merged.end(), B.begin(), B.end());
+                arrays[ins.result] = std::move(merged);
+                // Strings
+                std::vector<std::string> mergedStr;
+                const auto &AS = arraysStr[ins.arg1];
+                const auto &BS = arraysStr[ins.arg2];
+                mergedStr.reserve(AS.size() + BS.size());
+                mergedStr.insert(mergedStr.end(), AS.begin(), AS.end());
+                mergedStr.insert(mergedStr.end(), BS.begin(), BS.end());
+                arraysStr[ins.result] = std::move(mergedStr);
+                // Nested references
+                if (arraysNested.count(ins.arg1) || arraysNested.count(ins.arg2))
+                {
+                    std::vector<std::string> mergedN;
+                    auto AN = arraysNested.count(ins.arg1) ? arraysNested[ins.arg1] : std::vector<std::string>(A.size(), "");
+                    auto BN = arraysNested.count(ins.arg2) ? arraysNested[ins.arg2] : std::vector<std::string>(B.size(), "");
+                    mergedN.reserve(AN.size() + BN.size());
+                    mergedN.insert(mergedN.end(), AN.begin(), AN.end());
+                    mergedN.insert(mergedN.end(), BN.begin(), BN.end());
+                    arraysNested[ins.result] = std::move(mergedN);
+                }
+                // Limpa env numérico para não confundir com escalar
+                env.erase(ins.result);
+                envF.erase(ins.result);
             }
         }
         else if (ins.op == "call")
