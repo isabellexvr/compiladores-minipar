@@ -1,0 +1,29 @@
+# Teste 5 - Sistema de Recomendação Simplificado
+fun recomendar(usuario, produtos) {
+  SEQ
+    # Lógica simples: recomendar produtos com índice par
+    recomendacoes = []
+    
+    # Produto 0 - Smartphone
+    recomendacoes = recomendacoes + [produtos[0]]
+    
+    # Produto 2 - Tablet  
+    recomendacoes = recomendacoes + [produtos[2]]
+    
+    return recomendacoes
+}
+
+SEQ
+  # Dados de teste
+  produtos = ["Smartphone", "Laptop", "Tablet", "Fones"]
+  usuario = ["Joao", [1, 0, 0, 1]]
+  
+  # Chamar sistema de recomendação
+  recs = recomendar(usuario, produtos)
+  
+  # Mostrar resultados
+  print "=== SISTEMA DE RECOMENDAÇÃO ==="
+  print "Usuário:", usuario[0]
+  print "Histórico:", usuario[1] 
+  print "Produtos recomendados:", recs
+  print "Total de recomendações:", recs

@@ -113,38 +113,41 @@ unique_ptr<ProgramNode> Parser::parse()
                 if (match(RPAREN))
                     consume();
             }
-            // body
+            // body: exigir '{' para funções; parse até '}' exclusivo
             std::unique_ptr<ASTNode> bodyNode;
             if (match(LBRACE))
             {
-                consume();
+                consume(); // '{'
                 auto seq = make_unique<SeqNode>();
                 while (!match(RBRACE) && !match(END))
                 {
                     if (match(SEQ))
                     {
-                        // incorporar bloco SEQ interno
+                        // Bloco SEQ interno dentro da função
                         auto inner = parse_seq_block();
                         for (auto &s : inner->statements)
                             seq->statements.push_back(std::move(s));
                         continue;
                     }
+                    if (match(RBRACE) || match(END))
+                        break;
                     auto st = parse_statement();
                     if (st)
                     {
                         seq->statements.push_back(std::move(st));
                         continue;
                     }
-                    // token desconhecido: consumir e continuar
+                    // token desconhecido dentro da função: avançar
                     if (!match(RBRACE) && !match(END))
                         consume();
                 }
                 if (match(RBRACE))
-                    consume();
+                    consume(); // consumir '}' fechamento da função
                 bodyNode = std::move(seq);
             }
             else
             {
+                // Função sem '{' trata próxima statement única como corpo
                 bodyNode = parse_statement();
             }
             auto fdecl = make_unique<FunctionDeclNode>();
@@ -212,6 +215,9 @@ unique_ptr<SeqNode> Parser::parse_seq_block()
             break; // fim do bloco com chaves
         if (!hasBrace && (match(SEQ) || match(PAR) || match(ELSE)))
             break; // início de outro bloco estrutural sem chaves
+        // Se estivermos dentro de uma função (heurística: próximo token é '}' seguido de possível SEQ principal), parse_seq_block não deve atravessar '}'
+        if (!hasBrace && match(RBRACE))
+            break;
 
         auto stmt = parse_statement();
         if (stmt)
