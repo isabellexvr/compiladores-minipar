@@ -52,6 +52,8 @@ enum TokenType
     RPAREN,
     LBRACE,
     RBRACE,
+    LBRACKET,
+    RBRACKET,
     SEMICOLON,
     COMMA,
     DOT,

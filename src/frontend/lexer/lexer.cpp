@@ -249,6 +249,12 @@ vector<Token> Lexer::tokenize()
         case '}':
             tokens.push_back(Token(TokenType::RBRACE, "}", start_line, start_column));
             break;
+        case '[':
+            tokens.push_back(Token(TokenType::LBRACKET, "[", start_line, start_column));
+            break;
+        case ']':
+            tokens.push_back(Token(TokenType::RBRACKET, "]", start_line, start_column));
+            break;
         case ';':
             tokens.push_back(Token(TokenType::SEMICOLON, ";", start_line, start_column));
             break;

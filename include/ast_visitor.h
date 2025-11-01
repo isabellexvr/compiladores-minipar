@@ -24,6 +24,8 @@ struct BooleanNode;
 struct FunctionDeclNode;
 struct CallNode;
 struct ReturnNode;
+struct ArrayLiteralNode;
+struct ArrayAccessNode;
 
 // Visitor pattern para percorrer a AST
 class ASTVisitor
@@ -53,6 +55,8 @@ public:
     virtual void visit(FunctionDeclNode &node) = 0;
     virtual void visit(CallNode &node) = 0;
     virtual void visit(ReturnNode &node) = 0;
+    virtual void visit(ArrayLiteralNode &node) = 0;
+    virtual void visit(ArrayAccessNode &node) = 0;
 };
 
 #endif

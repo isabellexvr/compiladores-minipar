@@ -43,6 +43,8 @@ public:
     void visit(FunctionDeclNode &node) override;
     void visit(CallNode &node) override;
     void visit(ReturnNode &node) override;
+    void visit(ArrayLiteralNode &node) override;
+    void visit(ArrayAccessNode &node) override;
 };
 
 #endif

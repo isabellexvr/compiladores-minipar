@@ -557,11 +557,26 @@ unique_ptr<ASTNode> Parser::parse_primary()
             }
             if (match(RPAREN))
                 consume();
+            // potential chained array access after call result not supported; return call directly for now
             return call;
         }
+        std::unique_ptr<ASTNode> base;
         auto id_node = make_unique<IdentifierNode>();
         id_node->name = name;
-        return id_node;
+        base = std::move(id_node);
+        // handle chained array access: identifier '[' expression ']'
+        while (match(LBRACKET))
+        {
+            consume(); // [
+            auto idxExpr = parse_expression();
+            if (match(RBRACKET))
+                consume();
+            auto access = make_unique<ArrayAccessNode>();
+            access->base = std::move(base);
+            access->index = std::move(idxExpr);
+            base = std::move(access);
+        }
+        return base;
     }
     else if (match(LPAREN))
     {
@@ -571,7 +586,56 @@ unique_ptr<ASTNode> Parser::parse_primary()
         {
             consume(); // Consumir ')'
         }
-        return expr;
+        // after parenthesized expression allow array access chaining e.g. (arr)[i]
+        std::unique_ptr<ASTNode> base = std::move(expr);
+        while (match(LBRACKET))
+        {
+            consume();
+            auto idxExpr = parse_expression();
+            if (match(RBRACKET))
+                consume();
+            auto access = make_unique<ArrayAccessNode>();
+            access->base = std::move(base);
+            access->index = std::move(idxExpr);
+            base = std::move(access);
+        }
+        return base;
+    }
+    else if (match(LBRACKET))
+    {
+        consume(); // [
+        auto arr = make_unique<ArrayLiteralNode>();
+        if (!match(RBRACKET))
+        {
+            while (true)
+            {
+                auto elem = parse_expression();
+                if (elem)
+                    arr->elements.push_back(std::move(elem));
+                if (match(COMMA))
+                {
+                    consume();
+                    continue;
+                }
+                break;
+            }
+        }
+        if (match(RBRACKET))
+            consume();
+        // array literal can be followed by access e.g. [1,2,3][0]
+        std::unique_ptr<ASTNode> base = std::move(arr);
+        while (match(LBRACKET))
+        {
+            consume();
+            auto idxExpr = parse_expression();
+            if (match(RBRACKET))
+                consume();
+            auto access = make_unique<ArrayAccessNode>();
+            access->base = std::move(base);
+            access->index = std::move(idxExpr);
+            base = std::move(access);
+        }
+        return base;
     }
 
     // Erro - retornar nullptr

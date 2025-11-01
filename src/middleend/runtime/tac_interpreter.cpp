@@ -189,6 +189,11 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
                     }
                 }
             }
+            // copia de array: se RHS for um identificador de array
+            if (arrays.find(ins.arg1) != arrays.end())
+            {
+                arrays[ins.result] = arrays[ins.arg1];
+            }
         }
         else if (ins.op == "+" || ins.op == "-" || ins.op == "*" || ins.op == "/" ||
                  ins.op == "==" || ins.op == "!=" || ins.op == "<" || ins.op == "<=" ||
@@ -389,6 +394,41 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
                 // se pos == expectedRecvArgs-1, última variável
                 if (pos == expectedRecvArgs - 1)
                     finalizeReceive();
+            }
+        }
+        else if (ins.op == "array_init")
+        {
+            size_t sz = (size_t)valueOf(ins.arg1);
+            arrays[ins.result] = std::vector<double>(sz, 0.0);
+        }
+        else if (ins.op == "array_set")
+        {
+            // result[arg2] = arg1
+            auto it = arrays.find(ins.result);
+            if (it != arrays.end())
+            {
+                size_t idx = (size_t)valueOf(ins.arg2);
+                double val = valueOf(ins.arg1);
+                if (idx < it->second.size())
+                    it->second[idx] = val;
+            }
+        }
+        else if (ins.op == "array_get")
+        {
+            auto it = arrays.find(ins.arg1);
+            if (it != arrays.end())
+            {
+                size_t idx = (size_t)valueOf(ins.arg2);
+                double val = (idx < it->second.size() ? it->second[idx] : 0.0);
+                // store into envF if fractional part present else env
+                if (val != (int)val)
+                    envF[ins.result] = val;
+                else
+                    env[ins.result] = (int)val;
+            }
+            else
+            {
+                env[ins.result] = 0; // fallback
             }
         }
         ip = next_ip;

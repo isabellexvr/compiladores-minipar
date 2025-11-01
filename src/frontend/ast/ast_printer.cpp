@@ -396,3 +396,49 @@ void ASTPrinter::visit(ReturnNode &node)
         indentLevel--;
     }
 }
+
+void ASTPrinter::visit(ArrayLiteralNode &node)
+{
+    printLine("ArrayLiteral(" + std::to_string(node.elements.size()) + "):");
+    indentLevel++;
+    for (auto &el : node.elements)
+    {
+        if (!el)
+        {
+            printLine("<null element>");
+            continue;
+        }
+        if (gVisitGuard.check(el.get()))
+        {
+            printLine("<cycle element>");
+            continue;
+        }
+        el->accept(*this);
+    }
+    indentLevel--;
+}
+
+void ASTPrinter::visit(ArrayAccessNode &node)
+{
+    printLine("ArrayAccess:");
+    indentLevel++;
+    printLine("Base:");
+    indentLevel++;
+    if (node.base && !gVisitGuard.check(node.base.get()))
+        node.base->accept(*this);
+    else if (!node.base)
+        printLine("<null base>");
+    else
+        printLine("<cycle base>");
+    indentLevel--;
+    printLine("Index:");
+    indentLevel++;
+    if (node.index && !gVisitGuard.check(node.index.get()))
+        node.index->accept(*this);
+    else if (!node.index)
+        printLine("<null index>");
+    else
+        printLine("<cycle index>");
+    indentLevel--;
+    indentLevel--;
+}

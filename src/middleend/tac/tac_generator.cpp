@@ -369,6 +369,32 @@ string TACGenerator::generate_expression(ASTNode *node)
         instructions.push_back(TACInstruction(temp, "=", b->value ? "1" : "0"));
         return temp;
     }
+    else if (auto arr = dynamic_cast<ArrayLiteralNode *>(node))
+    {
+        // gerar cada elemento e criar temporários consecutivos
+        std::vector<std::string> elemTemps;
+        for (auto &el : arr->elements)
+            elemTemps.push_back(generate_expression(el.get()));
+        // criar base temp para array
+        std::string base = new_temp();
+        // instrução especial: base = array_init N
+        instructions.push_back(TACInstruction(base, "array_init", to_string(elemTemps.size())));
+        // armazenar elementos: base[index] = temp  -> representado como op array_set, arg1=elemTemp, arg2=index
+        for (size_t i = 0; i < elemTemps.size(); ++i)
+        {
+            instructions.push_back(TACInstruction(base, "array_set", elemTemps[i], to_string(i)));
+        }
+        return base;
+    }
+    else if (auto access = dynamic_cast<ArrayAccessNode *>(node))
+    {
+        std::string baseTemp = generate_expression(access->base.get());
+        std::string indexTemp = generate_expression(access->index.get());
+        std::string result = new_temp();
+        // Represent array get: result = array_get baseTemp , indexTemp
+        instructions.push_back(TACInstruction(result, "array_get", baseTemp, indexTemp));
+        return result;
+    }
     else if (auto str = dynamic_cast<StringNode *>(node))
     {
         string temp = new_temp();
@@ -430,6 +456,18 @@ void TACGenerator::print_tac(std::ostream &out)
         else if (instr.op == "recv_arg")
         {
             out << instr.result << " = recv " << instr.arg1 << "[" << instr.arg2 << "]\n";
+        }
+        else if (instr.op == "array_init")
+        {
+            out << instr.result << " = array_init " << instr.arg1 << "\n";
+        }
+        else if (instr.op == "array_set")
+        {
+            out << instr.result << "[" << instr.arg2 << "] = " << instr.arg1 << "\n";
+        }
+        else if (instr.op == "array_get")
+        {
+            out << instr.result << " = " << instr.arg1 << "[" << instr.arg2 << "]\n";
         }
         else
         {

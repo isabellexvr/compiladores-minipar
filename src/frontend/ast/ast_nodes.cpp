@@ -165,3 +165,8 @@ std::string CallNode::toString() const { return "Call(" + name + ")"; }
 // ReturnNode
 void ReturnNode::accept(ASTVisitor &visitor) { visitor.visit(*this); }
 std::string ReturnNode::toString() const { return "Return"; }
+
+// ArrayLiteralNode
+void ArrayLiteralNode::accept(ASTVisitor &visitor) { visitor.visit(*this); }
+// ArrayAccessNode
+void ArrayAccessNode::accept(ASTVisitor &visitor) { visitor.visit(*this); }

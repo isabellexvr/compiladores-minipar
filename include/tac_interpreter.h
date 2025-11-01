@@ -40,6 +40,8 @@ private:
     std::string receivingChannel;
     size_t expectedRecvArgs = 0;
     std::vector<int> receivedMessage;
+    // armazenamento simples de arrays: nome -> vetor de double (suporta int/float)
+    std::unordered_map<std::string, std::vector<double>> arrays;
 
     double valueOf(const std::string &token) const;         // resolve nome ou literal
     std::string strValueOf(const std::string &token) const; // resolve string
