@@ -59,13 +59,13 @@ static std::string infer_type(ASTNode *node)
             return lt; // simplistic
         return "?";
     }
-        if (dynamic_cast<ArrayLiteralNode *>(node))
-            return "array";
-        if (auto acc = dynamic_cast<ArrayAccessNode *>(node))
-        {
-            // type of access is element type; for now assume int
-            return "int";
-        }
+    if (dynamic_cast<ArrayLiteralNode *>(node))
+        return "array";
+    if (auto acc = dynamic_cast<ArrayAccessNode *>(node))
+    {
+        // type of access is element type; for now assume int
+        return "int";
+    }
     if (auto un = dynamic_cast<UnaryOpNode *>(node))
         return infer_type(un->operand.get());
     if (dynamic_cast<IdentifierNode *>(node))

@@ -222,8 +222,8 @@ struct ArrayLiteralNode : public ASTNode
 // Array access: base[index]
 struct ArrayAccessNode : public ASTNode
 {
-    std::unique_ptr<ASTNode> base;   // typically IdentifierNode or another ArrayAccessNode
-    std::unique_ptr<ASTNode> index;  // expression yielding integer
+    std::unique_ptr<ASTNode> base;  // typically IdentifierNode or another ArrayAccessNode
+    std::unique_ptr<ASTNode> index; // expression yielding integer
     void accept(ASTVisitor &visitor) override;
     std::string toString() const override { return "ArrayAccess"; }
 };
