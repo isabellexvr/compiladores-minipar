@@ -1,6 +1,0 @@
-# Teste simples de soma de floats
-SEQ
-  x = 1.5;
-  y = 2.25;
-  z = x + y;
-  print z;

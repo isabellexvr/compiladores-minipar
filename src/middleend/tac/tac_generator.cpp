@@ -1,6 +1,11 @@
 #include "tac_generator.h"
 #include "ast_nodes.h"
 #include <iostream>
+#ifdef MINIPAR_DEBUG
+#define DBG(msg) do { std::cerr << msg; } while(0)
+#else
+#define DBG(msg) do {} while(0)
+#endif
 
 using namespace std;
 
@@ -134,7 +139,7 @@ void TACGenerator::generate_statement(ASTNode *stmt)
 {
     if (!stmt)
         return;
-    std::cerr << "[TAC] enter stmt=" << stmt->toString() << " ptr=" << stmt << "\n";
+    DBG("[TAC] enter stmt=" << stmt->toString() << " ptr=" << stmt << "\n");
 
     if (auto assignment = dynamic_cast<AssignmentNode *>(stmt))
     {
@@ -298,7 +303,7 @@ void TACGenerator::generate_statement(ASTNode *stmt)
         }
         instructions.push_back(TACInstruction(endLabel, "label", ""));
     }
-    std::cerr << "[TAC] exit stmt=" << stmt->toString() << "\n";
+    DBG("[TAC] exit stmt=" << stmt->toString() << "\n");
 }
 
 string TACGenerator::generate_expression(ASTNode *node)

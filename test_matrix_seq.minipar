@@ -1,4 +1,0 @@
-SEQ
-matriz = [[10, 20], [30, 40]];
-print matriz[0][0];
-print matriz[1][0];

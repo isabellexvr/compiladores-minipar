@@ -11,6 +11,7 @@ SUBDIRS = \
     $(SRCDIR)/frontend/semantic \
     $(SRCDIR)/middleend/symbol_table \
     $(SRCDIR)/middleend/tac \
+    $(SRCDIR)/middleend/runtime \
     $(SRCDIR)/backend/arm \
     $(SRCDIR)/backend/optimization \
     $(SRCDIR)/emscripten \
@@ -24,9 +25,6 @@ SOURCES_SUB  = $(foreach d,$(SUBDIRS),$(wildcard $(d)/*.cpp))
 SOURCES = $(SOURCES_ROOT) $(SOURCES_SUB)
 OBJECTS = $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(SOURCES))
 TARGET = web/react/public/compilador.js
-$(TARGET): $(OBJECTS)
-	$(CXX) $(CXXFLAGS) $(EM_FLAGS) $(OBJECTS) -o $(TARGET)
-    
 # Flags do Emscripten
 EM_FLAGS = -s WASM=1 \
            -s MODULARIZE=1 \
