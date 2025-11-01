@@ -26,6 +26,7 @@ private:
     std::unique_ptr<ASTNode> parse_factor();
     std::unique_ptr<ASTNode> parse_primary();
     std::unique_ptr<ASTNode> parse_while_statement();
+    std::unique_ptr<ASTNode> parse_if_statement();
     std::unique_ptr<SeqNode> parse_seq_block();
 
 public:

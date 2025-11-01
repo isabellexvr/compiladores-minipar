@@ -173,7 +173,45 @@ void TACGenerator::generate_statement(ASTNode *stmt)
         string valTemp = ret->value ? generate_expression(ret->value.get()) : "";
         instructions.push_back(TACInstruction("ret", "return", valTemp));
     }
-    // REMOVA a parte do IfNode por enquanto - vamos implementar depois
+    else if (auto ifn = dynamic_cast<IfNode *>(stmt))
+    {
+        string condTemp = generate_expression(ifn->condition.get());
+        string elseLabel = new_label();
+        string endLabel = new_label();
+        // if_false cond goto else
+        instructions.push_back(TACInstruction("", "if_false", condTemp, elseLabel));
+        // then branch
+        if (ifn->thenBranch)
+        {
+            if (auto seq = dynamic_cast<SeqNode *>(ifn->thenBranch.get()))
+            {
+                for (auto &s : seq->statements)
+                    generate_statement(s.get());
+            }
+            else
+            {
+                generate_statement(ifn->thenBranch.get());
+            }
+        }
+        // goto end
+        instructions.push_back(TACInstruction("", "goto", endLabel));
+        // else label + else code
+        instructions.push_back(TACInstruction(elseLabel, "label", ""));
+        if (ifn->elseBranch)
+        {
+            if (auto seq = dynamic_cast<SeqNode *>(ifn->elseBranch.get()))
+            {
+                for (auto &s : seq->statements)
+                    generate_statement(s.get());
+            }
+            else
+            {
+                generate_statement(ifn->elseBranch.get());
+            }
+        }
+        // end label after else code
+        instructions.push_back(TACInstruction(endLabel, "label", ""));
+    }
 }
 
 string TACGenerator::generate_expression(ASTNode *node)

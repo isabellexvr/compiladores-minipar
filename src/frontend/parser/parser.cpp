@@ -345,6 +345,10 @@ unique_ptr<ASTNode> Parser::parse_statement()
     {
         return parse_while_statement();
     }
+    else if (match(IF))
+    {
+        return parse_if_statement();
+    }
 
     // Se não reconhecer, pular token
     consume();
@@ -578,4 +582,35 @@ unique_ptr<ASTNode> Parser::parse_while_statement()
         while_node->body = std::move(body_seq);
     }
     return while_node;
+}
+
+unique_ptr<ASTNode> Parser::parse_if_statement()
+{
+    consume(); // IF
+    auto ifNode = make_unique<IfNode>();
+    // opcional parênteses
+    if (match(LPAREN))
+        consume();
+    ifNode->condition = parse_expression();
+    if (match(RPAREN))
+        consume();
+    // then branch: se próximo for SEQ consumir bloco, senão única instrução
+    if (match(SEQ))
+    {
+        ifNode->thenBranch = parse_seq_block();
+    }
+    else
+    {
+        ifNode->thenBranch = parse_statement();
+    }
+    // else opcional
+    if (match(ELSE))
+    {
+        consume();
+        if (match(SEQ))
+            ifNode->elseBranch = parse_seq_block();
+        else
+            ifNode->elseBranch = parse_statement();
+    }
+    return ifNode;
 }
