@@ -17,6 +17,7 @@ struct WhileNode;
 struct BinaryOpNode;
 struct UnaryOpNode;
 struct NumberNode;
+struct FloatNode;
 struct StringNode;
 struct IdentifierNode;
 struct BooleanNode;
@@ -45,6 +46,7 @@ public:
     virtual void visit(BinaryOpNode &node) = 0;
     virtual void visit(UnaryOpNode &node) = 0;
     virtual void visit(NumberNode &node) = 0;
+    virtual void visit(FloatNode &node) = 0;
     virtual void visit(StringNode &node) = 0;
     virtual void visit(IdentifierNode &node) = 0;
     virtual void visit(BooleanNode &node) = 0;

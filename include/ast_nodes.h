@@ -76,8 +76,7 @@ struct AssignmentNode : public ASTNode
 
 struct PrintNode : public ASTNode
 {
-    std::unique_ptr<ASTNode> expression;
-
+    std::vector<std::unique_ptr<ASTNode>> expressions; // múltiplos argumentos
     void accept(ASTVisitor &visitor) override;
     std::string toString() const override;
 };

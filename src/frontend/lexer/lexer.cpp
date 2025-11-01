@@ -69,13 +69,38 @@ Token Lexer::read_number()
     int start_line = line;
     int start_column = column;
     bool hasDot = false;
-    while (current_char != '\0' && (isdigit(current_char) || (!hasDot && current_char == '.')))
+    int digitsBefore = 0;
+    int digitsAfter = 0;
+
+    // Primeiro parte inteira
+    while (current_char != '\0' && isdigit(current_char))
     {
-        if (current_char == '.') hasDot = true;
         number += current_char;
+        digitsBefore++;
         advance();
     }
-    return Token(hasDot ? TokenType::FLOAT : TokenType::NUMBER, number, start_line, start_column);
+    // Parte fracionária opcional
+    if (current_char == '.')
+    {
+        // Olhar próxima posição: se não houver dígito depois, não tratar como float
+        if (peek() != '\0' && isdigit(peek()))
+        {
+            hasDot = true;
+            number += current_char; // '.'
+            advance();
+            while (current_char != '\0' && isdigit(current_char))
+            {
+                number += current_char;
+                digitsAfter++;
+                advance();
+            }
+        }
+        // Caso contrário não consome '.' aqui; deixa para tratador geral (será token DOT separado)
+    }
+    // Classificação: precisa ter pelo menos um dígito antes e depois do ponto para ser FLOAT
+    if (hasDot && digitsBefore > 0 && digitsAfter > 0)
+        return Token(TokenType::FLOAT, number, start_line, start_column);
+    return Token(TokenType::NUMBER, number, start_line, start_column);
 }
 
 Token Lexer::read_string()
@@ -127,6 +152,7 @@ vector<Token> Lexer::tokenize()
             tokens.push_back(read_number());
             continue;
         }
+        // Não aceitar '.5' como float; somente d+.d+; caso '.' venha seguido de dígito sem parte inteira, token DOT + número posterior.
         if (current_char == '"')
         {
             tokens.push_back(read_string());

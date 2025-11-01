@@ -1,6 +1,26 @@
 #include "ast_printer.h"
 #include "ast_nodes.h"
 #include <iostream>
+#include <unordered_set>
+
+// Simple cycle guard (defensive) to avoid infinite recursion if malformed AST links appear.
+
+class VisitGuard
+{
+public:
+    std::unordered_set<const ASTNode *> seen;
+    bool check(const ASTNode *n)
+    {
+        if (!n)
+            return false;
+        if (seen.count(n))
+            return true;
+        seen.insert(n);
+        return false;
+    }
+};
+
+static VisitGuard gVisitGuard; // global for this translation unit (printer runs once per program)
 
 void ASTPrinter::addIndent()
 {
@@ -30,6 +50,11 @@ void ASTPrinter::visit(ProgramNode &node)
     indentLevel++;
     for (auto &stmt : node.statements)
     {
+        if (gVisitGuard.check(stmt.get()))
+        {
+            printLine("<cycle detected>");
+            continue;
+        }
         stmt->accept(*this);
     }
     indentLevel--;
@@ -41,6 +66,11 @@ void ASTPrinter::visit(SeqNode &node)
     indentLevel++;
     for (auto &stmt : node.statements)
     {
+        if (gVisitGuard.check(stmt.get()))
+        {
+            printLine("<cycle detected>");
+            continue;
+        }
         stmt->accept(*this);
     }
     indentLevel--;
@@ -52,6 +82,11 @@ void ASTPrinter::visit(ParNode &node)
     indentLevel++;
     for (auto &stmt : node.statements)
     {
+        if (gVisitGuard.check(stmt.get()))
+        {
+            printLine("<cycle detected>");
+            continue;
+        }
         stmt->accept(*this);
     }
     indentLevel--;
@@ -71,15 +106,36 @@ void ASTPrinter::visit(AssignmentNode &node)
 {
     printLine("Assignment: " + node.identifier + " = ");
     indentLevel++;
-    node.expression->accept(*this);
+    if (node.expression)
+    {
+        if (!gVisitGuard.check(node.expression.get()))
+            node.expression->accept(*this);
+        else
+            printLine("<cycle expr>");
+    }
+    else
+        printLine("<null expr>");
     indentLevel--;
 }
 
 void ASTPrinter::visit(PrintNode &node)
 {
-    printLine("Print:");
+    printLine("Print(" + std::to_string(node.expressions.size()) + "):");
     indentLevel++;
-    node.expression->accept(*this);
+    for (auto &e : node.expressions)
+    {
+        if (!e)
+        {
+            printLine("<null print expr>");
+            continue;
+        }
+        if (gVisitGuard.check(e.get()))
+        {
+            printLine("<cycle print expr>");
+            continue;
+        }
+        e->accept(*this);
+    }
     indentLevel--;
 }
 
@@ -114,12 +170,28 @@ void ASTPrinter::visit(IfNode &node)
     indentLevel++;
     printLine("Condition:");
     indentLevel++;
-    node.condition->accept(*this);
+    if (node.condition)
+    {
+        if (!gVisitGuard.check(node.condition.get()))
+            node.condition->accept(*this);
+        else
+            printLine("<cycle condition>");
+    }
+    else
+        printLine("<null condition>");
     indentLevel--;
 
     printLine("Then:");
     indentLevel++;
-    node.thenBranch->accept(*this);
+    if (node.thenBranch)
+    {
+        if (!gVisitGuard.check(node.thenBranch.get()))
+            node.thenBranch->accept(*this);
+        else
+            printLine("<cycle then>");
+    }
+    else
+        printLine("<null then>");
     indentLevel--;
 
     if (node.elseBranch)
@@ -138,12 +210,28 @@ void ASTPrinter::visit(WhileNode &node)
     indentLevel++;
     printLine("Condition:");
     indentLevel++;
-    node.condition->accept(*this);
+    if (node.condition)
+    {
+        if (!gVisitGuard.check(node.condition.get()))
+            node.condition->accept(*this);
+        else
+            printLine("<cycle condition>");
+    }
+    else
+        printLine("<null condition>");
     indentLevel--;
 
     printLine("Body:");
     indentLevel++;
-    node.body->accept(*this);
+    if (node.body)
+    {
+        if (!gVisitGuard.check(node.body.get()))
+            node.body->accept(*this);
+        else
+            printLine("<cycle body>");
+    }
+    else
+        printLine("<null body>");
     indentLevel--;
     indentLevel--;
 }
@@ -197,11 +285,21 @@ void ASTPrinter::visit(BinaryOpNode &node)
     indentLevel++;
     printLine("Left:");
     indentLevel++;
-    node.left->accept(*this);
+    if (node.left && !gVisitGuard.check(node.left.get()))
+        node.left->accept(*this);
+    else if (!node.left)
+        printLine("<null left>");
+    else
+        printLine("<cycle left>");
     indentLevel--;
     printLine("Right:");
     indentLevel++;
-    node.right->accept(*this);
+    if (node.right && !gVisitGuard.check(node.right.get()))
+        node.right->accept(*this);
+    else if (!node.right)
+        printLine("<null right>");
+    else
+        printLine("<cycle right>");
     indentLevel--;
     indentLevel--;
 }
@@ -210,13 +308,23 @@ void ASTPrinter::visit(UnaryOpNode &node)
 {
     printLine("UnaryOp: " + node.op);
     indentLevel++;
-    node.operand->accept(*this);
+    if (node.operand && !gVisitGuard.check(node.operand.get()))
+        node.operand->accept(*this);
+    else if (!node.operand)
+        printLine("<null operand>");
+    else
+        printLine("<cycle operand>");
     indentLevel--;
 }
 
 void ASTPrinter::visit(NumberNode &node)
 {
     printLine("Number: " + std::to_string(node.value));
+}
+
+void ASTPrinter::visit(FloatNode &node)
+{
+    printLine("Float: " + std::to_string(node.value));
 }
 
 void ASTPrinter::visit(StringNode &node)
@@ -240,7 +348,16 @@ void ASTPrinter::visit(FunctionDeclNode &node)
     if (node.body)
     {
         indentLevel++;
-        node.body->accept(*this);
+        if (!gVisitGuard.check(node.body.get()))
+            node.body->accept(*this);
+        else
+            printLine("<cycle body>");
+        indentLevel--;
+    }
+    else
+    {
+        indentLevel++;
+        printLine("<null body>");
         indentLevel--;
     }
 }
@@ -251,6 +368,16 @@ void ASTPrinter::visit(CallNode &node)
     indentLevel++;
     for (auto &a : node.args)
     {
+        if (!a)
+        {
+            printLine("<null arg>");
+            continue;
+        }
+        if (gVisitGuard.check(a.get()))
+        {
+            printLine("<cycle arg>");
+            continue;
+        }
         a->accept(*this);
     }
     indentLevel--;
@@ -262,7 +389,10 @@ void ASTPrinter::visit(ReturnNode &node)
     if (node.value)
     {
         indentLevel++;
-        node.value->accept(*this);
+        if (!gVisitGuard.check(node.value.get()))
+            node.value->accept(*this);
+        else
+            printLine("<cycle return value>");
         indentLevel--;
     }
 }

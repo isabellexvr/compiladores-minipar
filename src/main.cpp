@@ -56,6 +56,7 @@ static std::string token_category(TokenType t)
     case TokenType::IDENTIFIER:
         return "IDENTIFIER";
     case TokenType::NUMBER:
+    case TokenType::FLOAT:
     case TokenType::STRING_LITERAL:
         return "LITERAL";
     case TokenType::PLUS:
@@ -203,6 +204,17 @@ int main(int argc, char *argv[])
     std::cout << "\n=== EXECUTION (SIMULATED) ===\n";
     if (success)
     {
+        bool hasFunction = false;
+        if (auto prog = static_cast<ProgramNode *>(ast.get()))
+        {
+            for (auto &st : prog->statements)
+                if (dynamic_cast<FunctionDeclNode *>(st.get()))
+                {
+                    hasFunction = true;
+                    break;
+                }
+        }
+        // permitir execução mesmo com funções
         // Execução paralela real para blocos PAR: cada SEQ em sua thread
         bool hasPar = false;
         if (auto prog = static_cast<ProgramNode *>(ast.get()))

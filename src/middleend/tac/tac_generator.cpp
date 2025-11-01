@@ -21,39 +21,74 @@ vector<TACInstruction> TACGenerator::generate(ProgramNode *program)
     instructions.clear();
     temp_counter = 0;
     label_counter = 0;
-
     if (!program)
         return instructions;
 
+    // 1) Coletar apenas ponteiros das funções
+    std::vector<FunctionDeclNode *> functions;
+    std::vector<ASTNode *> mainStmts;
     for (auto &stmt : program->statements)
     {
-        if (auto seq = dynamic_cast<SeqNode *>(stmt.get()))
-        {
-            for (auto &seq_stmt : seq->statements)
-            {
-                generate_statement(seq_stmt.get());
-            }
-        }
-        else if (auto par = dynamic_cast<ParNode *>(stmt.get()))
-        {
-            // Para PAR, processamos todos os SEQ em paralelo
-            for (auto &par_stmt : par->statements)
-            {
-                if (auto seq = dynamic_cast<SeqNode *>(par_stmt.get()))
-                {
-                    for (auto &seq_stmt : seq->statements)
-                    {
-                        generate_statement(seq_stmt.get());
-                    }
-                }
-            }
-        }
+        if (auto f = dynamic_cast<FunctionDeclNode *>(stmt.get()))
+            functions.push_back(f);
         else
-        {
-            generate_statement(stmt.get());
-        }
+            mainStmts.push_back(stmt.get());
     }
 
+    // 2) Gerar código main (sem funções) direto
+    for (auto *st : mainStmts)
+        generate_statement(st);
+
+    // 3) Se houver funções, inserir salto para depois delas
+    if (!functions.empty())
+    {
+        std::string afterFunctions = new_label();
+        instructions.push_back(TACInstruction("", "goto", afterFunctions));
+        // gerar cada função encapsulada
+        for (auto *f : functions)
+        {
+            std::vector<TACInstruction> funcInstr;
+            funcInstr.push_back(TACInstruction(f->name, "label", ""));
+            for (size_t i = 0; i < f->params.size(); ++i)
+                funcInstr.push_back(TACInstruction(f->params[i], "param", "arg" + to_string(i)));
+            bool prev = inFunction;
+            inFunction = true;
+            currentFunctionName = f->name;
+            currentFunctionReturnLabel = "L_return_" + f->name; // label determinístico
+            // gerar corpo
+            if (auto bodySeq = dynamic_cast<SeqNode *>(f->body.get()))
+            {
+                for (auto &s : bodySeq->statements)
+                {
+                    size_t b = instructions.size();
+                    generate_statement(s.get());
+                    // mover recém gerado para funcInstr
+                    for (size_t j = b; j < instructions.size(); ++j)
+                        funcInstr.push_back(instructions[j]);
+                    instructions.erase(instructions.begin() + b, instructions.end());
+                }
+            }
+            else if (f->body)
+            {
+                size_t b = instructions.size();
+                generate_statement(f->body.get());
+                for (size_t j = b; j < instructions.size(); ++j)
+                    funcInstr.push_back(instructions[j]);
+                instructions.erase(instructions.begin() + b, instructions.end());
+            }
+            // Emite goto implícito caso nenhum return tenha sido gerado (retval indefinido)
+            // Label de retorno e retorno final
+            funcInstr.push_back(TACInstruction(currentFunctionReturnLabel, "label", ""));
+            funcInstr.push_back(TACInstruction("", "return", "retval"));
+            inFunction = prev;
+            currentFunctionName.clear();
+            currentFunctionReturnLabel.clear();
+            // anexar função
+            for (auto &fi : funcInstr)
+                instructions.push_back(fi);
+        }
+        instructions.push_back(TACInstruction(afterFunctions, "label", ""));
+    }
     return instructions;
 }
 
@@ -73,21 +108,55 @@ void TACGenerator::generate_statement(ASTNode *stmt)
 {
     if (!stmt)
         return;
+    std::cerr << "[TAC] enter stmt=" << stmt->toString() << " ptr=" << stmt << "\n";
 
     if (auto assignment = dynamic_cast<AssignmentNode *>(stmt))
     {
-        string temp = generate_expression(assignment->expression.get());
-        instructions.push_back(TACInstruction(assignment->identifier, "=", temp));
-           if (inFunction && assignment->identifier == "ret")
-           {
-               // gerar retorno implícito
-               instructions.push_back(TACInstruction("", "return", temp));
-           }
+        // atribuição comum ou retorno via 'ret'
+        if (auto callExpr = dynamic_cast<CallNode *>(assignment->expression.get()))
+        {
+            // gera chamada e depois lê retval
+            (void)generate_expression(callExpr); // emite argN e call
+            instructions.push_back(TACInstruction(assignment->identifier, "=", "retval"));
+        }
+        else
+        {
+            string temp = generate_expression(assignment->expression.get());
+            if (inFunction && assignment->identifier == "ret")
+            {
+                instructions.push_back(TACInstruction("retval", "=", temp));
+                // goto para label de retorno
+                instructions.push_back(TACInstruction("", "goto", currentFunctionReturnLabel));
+            }
+            else
+            {
+                instructions.push_back(TACInstruction(assignment->identifier, "=", temp));
+            }
+        }
+    }
+    else if (auto seq = dynamic_cast<SeqNode *>(stmt))
+    {
+        // expandir
+        for (auto &s : seq->statements)
+            generate_statement(s.get());
+    }
+    else if (auto par = dynamic_cast<ParNode *>(stmt))
+    {
+        for (auto &seqPtr : par->statements)
+            if (auto seqInner = dynamic_cast<SeqNode *>(seqPtr.get()))
+                for (auto &s : seqInner->statements)
+                    generate_statement(s.get());
     }
     else if (auto print_node = dynamic_cast<PrintNode *>(stmt))
     {
-        string temp = generate_expression(print_node->expression.get());
-        instructions.push_back(TACInstruction("", "print", temp));
+        for (size_t i = 0; i < print_node->expressions.size(); ++i)
+        {
+            string temp = generate_expression(print_node->expressions[i].get());
+            if (i + 1 == print_node->expressions.size())
+                instructions.push_back(TACInstruction("", "print_last", temp));
+            else
+                instructions.push_back(TACInstruction("", "print", temp));
+        }
     }
     else if (auto while_node = dynamic_cast<WhileNode *>(stmt))
     {
@@ -124,16 +193,9 @@ void TACGenerator::generate_statement(ASTNode *stmt)
     }
     else if (auto call = dynamic_cast<CallNode *>(stmt))
     {
-        // evaluate args
-        vector<string> argTemps;
-        for (auto &a : call->args)
-            argTemps.push_back(generate_expression(a.get()));
-        // push args (simplified as assignments)
-        for (size_t i = 0; i < argTemps.size(); ++i)
-            instructions.push_back(TACInstruction("arg" + to_string(i), "=", argTemps[i]));
-    // emit call; result temp optional
-    string retTemp = new_temp();
-    instructions.push_back(TACInstruction(retTemp, "call", call->name, to_string(argTemps.size())));
+        // Chamada como statement descarta valor (mas ainda o produz)
+        std::string temp = emit_call(call);
+        // Sem atribuição destino aqui; se linguagem suportar ignorar retorno está ok
     }
     else if (auto send = dynamic_cast<SendNode *>(stmt))
     {
@@ -159,44 +221,30 @@ void TACGenerator::generate_statement(ASTNode *stmt)
             instructions.push_back(TACInstruction(recv->variables[i], "recv_arg", recv->channelName, to_string(i)));
         }
     }
-    else if (auto fdecl = dynamic_cast<FunctionDeclNode *>(stmt))
-    {
-        // Label for function start
-        instructions.push_back(TACInstruction(fdecl->name, "label", ""));
-        // store parameter placeholders: we emit param receive ops
-        for (size_t i = 0; i < fdecl->params.size(); ++i)
-        {
-            // param_i = arg{i}
-            instructions.push_back(TACInstruction(fdecl->params[i], "param", "arg" + to_string(i)));
-        }
-        bool prev = inFunction;
-        inFunction = true;
-        if (auto bodySeq = dynamic_cast<SeqNode *>(fdecl->body.get()))
-        {
-            for (auto &s : bodySeq->statements)
-                generate_statement(s.get());
-        }
-        else
-        {
-            generate_statement(fdecl->body.get());
-        }
-        // implicit end label
-        instructions.push_back(TACInstruction(fdecl->name + "_end", "label", ""));
-        inFunction = prev;
+    else if (dynamic_cast<FunctionDeclNode *>(stmt))
+    { /* função tratada em generate() */
     }
     else if (auto ret = dynamic_cast<ReturnNode *>(stmt))
     {
         string valTemp = ret->value ? generate_expression(ret->value.get()) : "";
-        instructions.push_back(TACInstruction("ret", "return", valTemp));
+        if (inFunction)
+        {
+            instructions.push_back(TACInstruction("retval", "=", valTemp));
+            instructions.push_back(TACInstruction("", "goto", currentFunctionReturnLabel));
+        }
+        else
+        {
+            instructions.push_back(TACInstruction("", "return", valTemp));
+        }
     }
     else if (auto ifn = dynamic_cast<IfNode *>(stmt))
     {
+        // Estrutura: cond, if_false -> elseLabel, then..., goto endLabel, elseLabel:, else..., endLabel:
         string condTemp = generate_expression(ifn->condition.get());
         string elseLabel = new_label();
         string endLabel = new_label();
-        // if_false cond goto else
         instructions.push_back(TACInstruction("", "if_false", condTemp, elseLabel));
-        // then branch
+        // THEN
         if (ifn->thenBranch)
         {
             if (auto seq = dynamic_cast<SeqNode *>(ifn->thenBranch.get()))
@@ -209,9 +257,8 @@ void TACGenerator::generate_statement(ASTNode *stmt)
                 generate_statement(ifn->thenBranch.get());
             }
         }
-        // goto end
         instructions.push_back(TACInstruction("", "goto", endLabel));
-        // else label + else code
+        // ELSE
         instructions.push_back(TACInstruction(elseLabel, "label", ""));
         if (ifn->elseBranch)
         {
@@ -225,9 +272,9 @@ void TACGenerator::generate_statement(ASTNode *stmt)
                 generate_statement(ifn->elseBranch.get());
             }
         }
-        // end label after else code
         instructions.push_back(TACInstruction(endLabel, "label", ""));
     }
+    std::cerr << "[TAC] exit stmt=" << stmt->toString() << "\n";
 }
 
 string TACGenerator::generate_expression(ASTNode *node)
@@ -303,8 +350,17 @@ string TACGenerator::generate_expression(ASTNode *node)
     {
         string inner = generate_expression(un->operand.get());
         string temp = new_temp();
-        // Represent unary not as temp = ! inner
-        instructions.push_back(TACInstruction(temp, "!", inner));
+        if (un->op == "!")
+        {
+            instructions.push_back(TACInstruction(temp, "!", inner));
+        }
+        else if (un->op == "-")
+        {
+            // temp = 0 - inner
+            string zero = new_temp();
+            instructions.push_back(TACInstruction(zero, "=", "0"));
+            instructions.push_back(TACInstruction(temp, "-", zero, inner));
+        }
         return temp;
     }
     else if (auto b = dynamic_cast<BooleanNode *>(node))
@@ -323,19 +379,12 @@ string TACGenerator::generate_expression(ASTNode *node)
     {
         string temp = new_temp();
         instructions.push_back(TACInstruction(temp, "=", to_string(fl->value)));
+        std::cerr << "[TAC] float literal value=" << fl->value << " temp=" << temp << "\n";
         return temp;
     }
     else if (auto call = dynamic_cast<CallNode *>(node))
     {
-        // gerar args
-        std::vector<std::string> argTemps;
-        for (auto &a : call->args)
-            argTemps.push_back(generate_expression(a.get()));
-        for (size_t i = 0; i < argTemps.size(); ++i)
-            instructions.push_back(TACInstruction("arg" + to_string(i), "=", argTemps[i]));
-        std::string retTemp = new_temp();
-        instructions.push_back(TACInstruction(retTemp, "call", call->name, to_string(argTemps.size())));
-        return retTemp;
+        return emit_call(call);
     }
     // REMOVA a parte do UnaryOpNode por enquanto
 
@@ -388,6 +437,25 @@ void TACGenerator::print_tac(std::ostream &out)
             out << instr.result << " = " << instr.arg1 << " " << instr.op << " " << instr.arg2 << "\n";
         }
     }
+}
+
+std::string TACGenerator::emit_call(CallNode *call)
+{
+    // 1) Gera cada argumento para temp
+    std::vector<std::string> argTemps;
+    argTemps.reserve(call->args.size());
+    for (auto &a : call->args)
+        argTemps.push_back(generate_expression(a.get()));
+    // 2) Atribui argN antes da instrução de call
+    for (size_t i = 0; i < argTemps.size(); ++i)
+        instructions.push_back(TACInstruction("arg" + to_string(i), "=", argTemps[i]));
+    // 3) Emite chamada com temp de retorno
+    std::string callTemp = new_temp();
+    instructions.push_back(TACInstruction(callTemp, "call", call->name, to_string(argTemps.size())));
+    // 4) Após retorno da função, valor estará em 'retval'; copiamos para callTemp (semelhante a convenção)
+    // (Interprete moverá para callTemp quando executar 'return') - se quisermos explicito pós-call usar instrução:
+    // Mas retorno acontece dentro da função, então aqui ainda não sabemos. Deixamos callTemp como marcador; após chamada, atribuição externa deverá usar 'retval'.
+    return callTemp;
 }
 
 void TACGenerator::print_tac()

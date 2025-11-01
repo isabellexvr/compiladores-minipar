@@ -36,6 +36,7 @@ public:
     void visit(BinaryOpNode &node) override;
     void visit(UnaryOpNode &node) override;
     void visit(NumberNode &node) override;
+    void visit(FloatNode &node) override;
     void visit(StringNode &node) override;
     void visit(IdentifierNode &node) override;
     void visit(BooleanNode &node) override;

@@ -121,11 +121,23 @@ unique_ptr<ProgramNode> Parser::parse()
                 auto seq = make_unique<SeqNode>();
                 while (!match(RBRACE) && !match(END))
                 {
+                    if (match(SEQ))
+                    {
+                        // incorporar bloco SEQ interno
+                        auto inner = parse_seq_block();
+                        for (auto &s : inner->statements)
+                            seq->statements.push_back(std::move(s));
+                        continue;
+                    }
                     auto st = parse_statement();
                     if (st)
+                    {
                         seq->statements.push_back(std::move(st));
-                    else
-                        break;
+                        continue;
+                    }
+                    // token desconhecido: consumir e continuar
+                    if (!match(RBRACE) && !match(END))
+                        consume();
                 }
                 if (match(RBRACE))
                     consume();
@@ -186,7 +198,7 @@ unique_ptr<SeqNode> Parser::parse_seq_block()
     auto seq = make_unique<SeqNode>();
 
     // Parse statements até encontrar outro SEQ, PAR, ou fim
-    while (!match(END) && !match(SEQ) && !match(PAR) && !match(ELSE))
+    while (!match(END) && !match(SEQ) && !match(PAR) && !match(ELSE) && !match(RBRACE))
     {
         auto stmt = parse_statement();
         if (stmt)
@@ -299,17 +311,22 @@ unique_ptr<ASTNode> Parser::parse_statement()
     }
     else if (match(TokenType::PRINT))
     {
-        // Print
         consume();
-
         auto print_node = make_unique<PrintNode>();
-        print_node->expression = parse_expression();
-
-        if (match(TokenType::SEMICOLON))
+        auto first = parse_expression();
+        if (first)
+            print_node->expressions.push_back(std::move(first));
+        while (match(TokenType::COMMA))
         {
             consume();
+            auto more = parse_expression();
+            if (more)
+                print_node->expressions.push_back(std::move(more));
+            else
+                break;
         }
-
+        if (match(TokenType::SEMICOLON))
+            consume();
         return print_node;
     }
     else if (match(RETURN))
@@ -458,6 +475,19 @@ unique_ptr<ASTNode> Parser::parse_factor()
 
 unique_ptr<ASTNode> Parser::parse_primary()
 {
+    // unary minus support: if leading '-' followed by number/float/identifier/paren
+    if (match(MINUS))
+    {
+        consume();
+        auto inner = parse_primary();
+        if (inner)
+        {
+            auto un = make_unique<UnaryOpNode>();
+            un->op = "-";
+            un->operand = std::move(inner);
+            return un;
+        }
+    }
     if (match(NUMBER))
     {
         auto num_node = make_unique<NumberNode>();

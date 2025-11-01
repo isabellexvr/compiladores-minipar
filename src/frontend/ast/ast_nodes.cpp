@@ -137,8 +137,8 @@ std::string StringNode::toString() const
     return "String(\"" + value + "\")";
 }
 
-// FloatNode (minimal - reuse NumberNode visitor if needed)
-void FloatNode::accept(ASTVisitor &visitor) { /* no dedicated visit; could map to NumberNode */ }
+// FloatNode
+void FloatNode::accept(ASTVisitor &visitor) { visitor.visit(*this); }
 
 // IdentifierNode
 void IdentifierNode::accept(ASTVisitor &visitor) { visitor.visit(*this); }

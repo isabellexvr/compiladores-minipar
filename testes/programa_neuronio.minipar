@@ -1,0 +1,37 @@
+# Programa de Teste 3 - Neurônio Corrigido (debug curto)
+fun activation(sum_val) {
+  SEQ
+    if (sum_val >= 0) SEQ return 1;
+    else SEQ return 0;
+}
+
+SEQ
+  # Parâmetros iniciais
+  input_val = 1
+  output_desire = 0
+  input_weight = 0.5
+  learning_rate = 0.1      # aumentado para acelerar convergência (teste rápido)
+  bias = 1
+  bias_weight = 0.5
+  error = 1           # começa com erro != 0 para entrar no loop
+  iteration = 0
+  max_iter = 20       # limite ajustado (poderia usar 60 para cenário completo)
+
+  print "Entrada: ", input_val, " Desejado: ", output_desire
+
+  while (error != 0 && iteration < max_iter) SEQ
+    iteration = iteration + 1
+    sum_val = (input_val * input_weight) + (bias * bias_weight)
+    output = activation(sum_val)
+    error = output_desire - output
+
+    print "Iter:", iteration, "Sum:", sum_val, "Out:", output, "Err:", error, "W:", input_weight, "WB:", bias_weight
+
+    if (error != 0) SEQ
+      input_weight = input_weight + (learning_rate * input_val * error)
+      bias_weight = bias_weight + (learning_rate * bias * error)
+
+  if (iteration >= max_iter) SEQ
+    print "ATINGIU LIMITE - Verifique convergência"
+  else SEQ
+    print "Convergiu! Iterações:", iteration

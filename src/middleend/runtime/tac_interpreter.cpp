@@ -141,11 +141,11 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
     while (ip < instrs.size())
     {
         const auto &ins = instrs[ip];
-        
+
         // Adicionando log de depuração para cada instrução
-        std::cerr << "DEBUG [ip=" << ip << "]: " 
-                  << ins.result << " = (" << ins.op << ") " 
-                  << ins.arg1 << (ins.arg2.empty() ? "" : ", " + ins.arg2) 
+        std::cerr << "DEBUG [ip=" << ip << "]: "
+                  << ins.result << " = (" << ins.op << ") "
+                  << ins.arg1 << (ins.arg2.empty() ? "" : ", " + ins.arg2)
                   << std::endl;
 
         size_t next_ip = ip + 1; // próximo padrão
@@ -169,24 +169,24 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
                 }
                 else
                 {
-                // pode ser temp que já está em env ou envStr
-                if (env.find(ins.arg1) != env.end())
-                {
-                    env[ins.result] = env[ins.arg1];
-                }
-                else if (envF.find(ins.arg1) != envF.end())
-                {
-                    envF[ins.result] = envF[ins.arg1];
-                }
-                else if (envStr.find(ins.arg1) != envStr.end())
-                {
-                    envStr[ins.result] = envStr[ins.arg1];
-                }
-                else
-                {
-                    // literal string
-                    envStr[ins.result] = ins.arg1;
-                }
+                    // pode ser temp que já está em env ou envStr
+                    if (env.find(ins.arg1) != env.end())
+                    {
+                        env[ins.result] = env[ins.arg1];
+                    }
+                    else if (envF.find(ins.arg1) != envF.end())
+                    {
+                        envF[ins.result] = envF[ins.arg1];
+                    }
+                    else if (envStr.find(ins.arg1) != envStr.end())
+                    {
+                        envStr[ins.result] = envStr[ins.arg1];
+                    }
+                    else
+                    {
+                        // literal string
+                        envStr[ins.result] = ins.arg1;
+                    }
                 }
             }
         }
@@ -204,10 +204,14 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
                 double left = valueOf(ins.arg1);
                 double right = valueOf(ins.arg2);
                 double val = 0.0;
-                if (ins.op == "+") val = left + right;
-                else if (ins.op == "-") val = left - right;
-                else if (ins.op == "*") val = left * right;
-                else if (ins.op == "/") val = (right != 0.0 ? left / right : 0.0);
+                if (ins.op == "+")
+                    val = left + right;
+                else if (ins.op == "-")
+                    val = left - right;
+                else if (ins.op == "*")
+                    val = left * right;
+                else if (ins.op == "/")
+                    val = (right != 0.0 ? left / right : 0.0);
                 envF[ins.result] = val;
             }
             else
@@ -215,58 +219,65 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
                 int left = (int)valueOf(ins.arg1);
                 int right = (ins.op == "!") ? 0 : (int)valueOf(ins.arg2);
                 int val = 0;
-            if (ins.op == "+")
-                val = left + right;
-            else if (ins.op == "-")
-                val = left - right;
-            else if (ins.op == "*")
-                val = left * right;
-            else if (ins.op == "/")
-                val = (right != 0 ? left / right : 0);
-            else if (ins.op == "==")
-                val = (left == right);
-            else if (ins.op == "!=")
-                val = (left != right);
-            else if (ins.op == "<")
-                val = (left < right);
-            else if (ins.op == "<=")
-                val = (left <= right);
-            else if (ins.op == ">")
-                val = (left > right);
-            else if (ins.op == ">=")
-                val = (left >= right);
-            else if (ins.op == "&&")
-                val = (left && right);
-            else if (ins.op == "||")
-                val = (left || right);
-            else if (ins.op == "!")
-                val = (!left);
-            env[ins.result] = val;
+                if (ins.op == "+")
+                    val = left + right;
+                else if (ins.op == "-")
+                    val = left - right;
+                else if (ins.op == "*")
+                    val = left * right;
+                else if (ins.op == "/")
+                    val = (right != 0 ? left / right : 0);
+                else if (ins.op == "==")
+                    val = (left == right);
+                else if (ins.op == "!=")
+                    val = (left != right);
+                else if (ins.op == "<")
+                    val = (left < right);
+                else if (ins.op == "<=")
+                    val = (left <= right);
+                else if (ins.op == ">")
+                    val = (left > right);
+                else if (ins.op == ">=")
+                    val = (left >= right);
+                else if (ins.op == "&&")
+                    val = (left && right);
+                else if (ins.op == "||")
+                    val = (left || right);
+                else if (ins.op == "!")
+                    val = (!left);
+                env[ins.result] = val;
             }
         }
-        else if (ins.op == "print")
+        else if (ins.op == "print" || ins.op == "print_last")
         {
-            // se for string temp
             if (envStr.find(ins.arg1) != envStr.end())
-                out << envStr[ins.arg1] << "\n";
+                out << envStr[ins.arg1];
             else if (envF.find(ins.arg1) != envF.end())
-                out << envF[ins.arg1] << "\n";
+                out << envF[ins.arg1];
             else
-                out << env[ins.arg1] << "\n";
+                out << env[ins.arg1];
+            if (ins.op == "print_last")
+                out << "\n";
+            else
+                out << " ";
         }
         else if (ins.op == "label")
         {
             // nada a fazer
+            // Se este label é o destino do salto inicial e estamos retornando de função sem callStack, podemos encerrar
+            if (callStack.empty() && ins.result.size() && ins.result[0] == 'L' && ip + 1 == instrs.size())
+            {
+                break;
+            }
         }
         else if (ins.op == "if_false")
         {
-            int cond = valueOf(ins.arg1);
-            if (cond == 0)
+            double cond = valueOf(ins.arg1);
+            if (cond == 0.0)
             {
-                // salto para label em arg2
                 auto it = labelMap.find(ins.arg2);
                 if (it != labelMap.end())
-                    next_ip = it->second + 1; // executar após label alvo
+                    next_ip = it->second + 1;
             }
         }
         else if (ins.op == "goto")
@@ -279,15 +290,18 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
         else if (ins.op == "param")
         {
             // param X = argY; argY may be in env or envF; if missing default 0
-            if (env.count(ins.arg1)) env[ins.result] = env[ins.arg1];
-            else if (envF.count(ins.arg1)) envF[ins.result] = envF[ins.arg1];
-            else if (envStr.count(ins.arg1)) envStr[ins.result] = envStr[ins.arg1];
+            if (env.count(ins.arg1))
+                env[ins.result] = env[ins.arg1];
+            else if (envF.count(ins.arg1))
+                envF[ins.result] = envF[ins.arg1];
+            else if (envStr.count(ins.arg1))
+                envStr[ins.result] = envStr[ins.arg1];
             else
             {
                 env[ins.result] = 0;
             }
         }
-    else if (ins.op == "call")
+        else if (ins.op == "call")
         {
             // ins.arg1 = function name, ins.arg2 = arg count, result = temp for return
             auto it = labelMap.find(ins.arg1);
@@ -299,7 +313,7 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
         }
         else if (ins.op == "return")
         {
-            // ins.arg1 holds temp return value
+            // ins.arg1 holds temp return value (already a temp or literal)
             if (!callStack.empty())
             {
                 auto frame = callStack.back();
@@ -307,9 +321,29 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
                 // move return value into target temp
                 if (frame.has_target)
                 {
-                    if (env.count(ins.arg1)) env[frame.return_target] = env[ins.arg1];
-                    else if (envF.count(ins.arg1)) envF[frame.return_target] = envF[ins.arg1];
-                    else if (envStr.count(ins.arg1)) envStr[frame.return_target] = envStr[ins.arg1];
+                    if (envF.count(ins.arg1))
+                        envF[frame.return_target] = envF[ins.arg1];
+                    else if (env.count(ins.arg1))
+                        env[frame.return_target] = env[ins.arg1];
+                    else if (envStr.count(ins.arg1))
+                        envStr[frame.return_target] = envStr[ins.arg1];
+                    else
+                    {
+                        // literal number fallback
+                        char *e = nullptr;
+                        long vi = strtol(ins.arg1.c_str(), &e, 10);
+                        if (*e == '\0')
+                            env[frame.return_target] = (int)vi;
+                        else
+                        {
+                            char *ef = nullptr;
+                            double vf = strtod(ins.arg1.c_str(), &ef);
+                            if (*ef == '\0')
+                                envF[frame.return_target] = vf;
+                            else
+                                envStr[frame.return_target] = ins.arg1;
+                        }
+                    }
                 }
                 next_ip = frame.return_ip;
             }

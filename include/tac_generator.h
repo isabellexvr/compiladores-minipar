@@ -25,11 +25,14 @@ private:
     int temp_counter;
     int label_counter;
     bool inFunction = false;
+    std::string currentFunctionName;
+    std::string currentFunctionReturnLabel;
 
     std::string new_temp();
     std::string new_label(); // ← ADICIONE ESTA LINHA
     void generate_statement(ASTNode *stmt);
     std::string generate_expression(ASTNode *node);
+    std::string emit_call(CallNode *call); // garante ordem argN antes de call
 
 public:
     TACGenerator();
