@@ -78,6 +78,11 @@ void TACGenerator::generate_statement(ASTNode *stmt)
     {
         string temp = generate_expression(assignment->expression.get());
         instructions.push_back(TACInstruction(assignment->identifier, "=", temp));
+           if (inFunction && assignment->identifier == "ret")
+           {
+               // gerar retorno implícito
+               instructions.push_back(TACInstruction("", "return", temp));
+           }
     }
     else if (auto print_node = dynamic_cast<PrintNode *>(stmt))
     {
@@ -126,7 +131,9 @@ void TACGenerator::generate_statement(ASTNode *stmt)
         // push args (simplified as assignments)
         for (size_t i = 0; i < argTemps.size(); ++i)
             instructions.push_back(TACInstruction("arg" + to_string(i), "=", argTemps[i]));
-        instructions.push_back(TACInstruction("", call->name, "call"));
+    // emit call; result temp optional
+    string retTemp = new_temp();
+    instructions.push_back(TACInstruction(retTemp, "call", call->name, to_string(argTemps.size())));
     }
     else if (auto send = dynamic_cast<SendNode *>(stmt))
     {
@@ -156,6 +163,14 @@ void TACGenerator::generate_statement(ASTNode *stmt)
     {
         // Label for function start
         instructions.push_back(TACInstruction(fdecl->name, "label", ""));
+        // store parameter placeholders: we emit param receive ops
+        for (size_t i = 0; i < fdecl->params.size(); ++i)
+        {
+            // param_i = arg{i}
+            instructions.push_back(TACInstruction(fdecl->params[i], "param", "arg" + to_string(i)));
+        }
+        bool prev = inFunction;
+        inFunction = true;
         if (auto bodySeq = dynamic_cast<SeqNode *>(fdecl->body.get()))
         {
             for (auto &s : bodySeq->statements)
@@ -167,6 +182,7 @@ void TACGenerator::generate_statement(ASTNode *stmt)
         }
         // implicit end label
         instructions.push_back(TACInstruction(fdecl->name + "_end", "label", ""));
+        inFunction = prev;
     }
     else if (auto ret = dynamic_cast<ReturnNode *>(stmt))
     {
@@ -302,6 +318,24 @@ string TACGenerator::generate_expression(ASTNode *node)
         string temp = new_temp();
         instructions.push_back(TACInstruction(temp, "=", str->value)); // guarda literal bruto
         return temp;
+    }
+    else if (auto fl = dynamic_cast<FloatNode *>(node))
+    {
+        string temp = new_temp();
+        instructions.push_back(TACInstruction(temp, "=", to_string(fl->value)));
+        return temp;
+    }
+    else if (auto call = dynamic_cast<CallNode *>(node))
+    {
+        // gerar args
+        std::vector<std::string> argTemps;
+        for (auto &a : call->args)
+            argTemps.push_back(generate_expression(a.get()));
+        for (size_t i = 0; i < argTemps.size(); ++i)
+            instructions.push_back(TACInstruction("arg" + to_string(i), "=", argTemps[i]));
+        std::string retTemp = new_temp();
+        instructions.push_back(TACInstruction(retTemp, "call", call->name, to_string(argTemps.size())));
+        return retTemp;
     }
     // REMOVA a parte do UnaryOpNode por enquanto
 

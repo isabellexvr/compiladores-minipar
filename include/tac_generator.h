@@ -24,6 +24,7 @@ private:
     std::vector<TACInstruction> instructions;
     int temp_counter;
     int label_counter;
+    bool inFunction = false;
 
     std::string new_temp();
     std::string new_label(); // ← ADICIONE ESTA LINHA

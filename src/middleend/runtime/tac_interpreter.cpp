@@ -1,19 +1,40 @@
 #include "tac_interpreter.h"
 #include <cstdlib>
+#include <iostream>
 
-int TACInterpreter::valueOf(const std::string &token) const
+double TACInterpreter::valueOf(const std::string &token) const
 {
     if (token.empty())
-        return 0;
-    auto it = env.find(token);
-    if (it != env.end())
-        return it->second;
-    // tenta número literal
-    char *end = nullptr;
-    long v = std::strtol(token.c_str(), &end, 10);
-    if (*end == '\0')
-        return (int)v;
-    return 0;
+        return 0.0;
+
+    // Prioriza variáveis locais (pode ser int ou float)
+    auto it_f = envF.find(token);
+    if (it_f != envF.end())
+        return it_f->second;
+
+    auto it_i = env.find(token);
+    if (it_i != env.end())
+        return (double)it_i->second;
+
+    // Se não for variável, tenta converter para número literal
+    char *end_i = nullptr;
+    long v_i = std::strtol(token.c_str(), &end_i, 10);
+
+    char *end_f = nullptr;
+    double v_f = std::strtod(token.c_str(), &end_f);
+
+    // Se o token inteiro foi consumido na conversão para float, é um float.
+    if (*end_f == '\0')
+    {
+        return v_f;
+    }
+    // Senão, se foi consumido na conversão para int, é um int.
+    if (*end_i == '\0')
+    {
+        return (double)v_i;
+    }
+
+    return 0.0; // Default se não for nem var nem literal numérico
 }
 
 void TACInterpreter::finalizeSend()
@@ -100,12 +121,33 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
         if (instrs[i].op == "label")
             labelMap[instrs[i].result] = i;
     }
+    // Pré-pass: coletar params por função (param instruções seguem label)
+    for (size_t i = 0; i < instrs.size(); ++i)
+    {
+        if (instrs[i].op == "label")
+        {
+            std::string fname = instrs[i].result;
+            size_t j = i + 1;
+            while (j < instrs.size() && instrs[j].op == "param")
+            {
+                funcParams[fname].push_back(instrs[j].result); // nome do param
+                ++j;
+            }
+        }
+    }
 
     // Loop manual com ip para permitir saltos
     size_t ip = 0;
     while (ip < instrs.size())
     {
         const auto &ins = instrs[ip];
+        
+        // Adicionando log de depuração para cada instrução
+        std::cerr << "DEBUG [ip=" << ip << "]: " 
+                  << ins.result << " = (" << ins.op << ") " 
+                  << ins.arg1 << (ins.arg2.empty() ? "" : ", " + ins.arg2) 
+                  << std::endl;
+
         size_t next_ip = ip + 1; // próximo padrão
         if (ins.op == "=")
         {
@@ -118,10 +160,23 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
             }
             else
             {
+                // tenta float
+                char *endf = nullptr;
+                double vf = strtod(ins.arg1.c_str(), &endf);
+                if (*endf == '\0')
+                {
+                    envF[ins.result] = vf;
+                }
+                else
+                {
                 // pode ser temp que já está em env ou envStr
                 if (env.find(ins.arg1) != env.end())
                 {
                     env[ins.result] = env[ins.arg1];
+                }
+                else if (envF.find(ins.arg1) != envF.end())
+                {
+                    envF[ins.result] = envF[ins.arg1];
                 }
                 else if (envStr.find(ins.arg1) != envStr.end())
                 {
@@ -132,15 +187,34 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
                     // literal string
                     envStr[ins.result] = ins.arg1;
                 }
+                }
             }
         }
         else if (ins.op == "+" || ins.op == "-" || ins.op == "*" || ins.op == "/" ||
                  ins.op == "==" || ins.op == "!=" || ins.op == "<" || ins.op == "<=" ||
                  ins.op == ">" || ins.op == ">=" || ins.op == "&&" || ins.op == "||" || ins.op == "!")
         {
-            int left = valueOf(ins.arg1);
-            int right = ins.op == "!" ? 0 : valueOf(ins.arg2);
-            int val = 0;
+            // Verifica se algum dos operandos é float (seja como variável ou como literal)
+            bool isFloat1 = envF.count(ins.arg1) || (ins.arg1.find('.') != std::string::npos);
+            bool isFloat2 = envF.count(ins.arg2) || (ins.arg2.find('.') != std::string::npos);
+            bool floatOp = isFloat1 || isFloat2;
+
+            if (floatOp && (ins.op == "+" || ins.op == "-" || ins.op == "*" || ins.op == "/"))
+            {
+                double left = valueOf(ins.arg1);
+                double right = valueOf(ins.arg2);
+                double val = 0.0;
+                if (ins.op == "+") val = left + right;
+                else if (ins.op == "-") val = left - right;
+                else if (ins.op == "*") val = left * right;
+                else if (ins.op == "/") val = (right != 0.0 ? left / right : 0.0);
+                envF[ins.result] = val;
+            }
+            else
+            {
+                int left = (int)valueOf(ins.arg1);
+                int right = (ins.op == "!") ? 0 : (int)valueOf(ins.arg2);
+                int val = 0;
             if (ins.op == "+")
                 val = left + right;
             else if (ins.op == "-")
@@ -168,12 +242,15 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
             else if (ins.op == "!")
                 val = (!left);
             env[ins.result] = val;
+            }
         }
         else if (ins.op == "print")
         {
             // se for string temp
             if (envStr.find(ins.arg1) != envStr.end())
                 out << envStr[ins.arg1] << "\n";
+            else if (envF.find(ins.arg1) != envF.end())
+                out << envF[ins.arg1] << "\n";
             else
                 out << env[ins.arg1] << "\n";
         }
@@ -198,6 +275,44 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
             auto it = labelMap.find(ins.arg1);
             if (it != labelMap.end())
                 next_ip = it->second + 1;
+        }
+        else if (ins.op == "param")
+        {
+            // param X = argY; argY may be in env or envF; if missing default 0
+            if (env.count(ins.arg1)) env[ins.result] = env[ins.arg1];
+            else if (envF.count(ins.arg1)) envF[ins.result] = envF[ins.arg1];
+            else if (envStr.count(ins.arg1)) envStr[ins.result] = envStr[ins.arg1];
+            else
+            {
+                env[ins.result] = 0;
+            }
+        }
+    else if (ins.op == "call")
+        {
+            // ins.arg1 = function name, ins.arg2 = arg count, result = temp for return
+            auto it = labelMap.find(ins.arg1);
+            if (it != labelMap.end())
+            {
+                callStack.push_back({next_ip, ins.result, true});
+                next_ip = it->second + 1; // after label, params will be processed
+            }
+        }
+        else if (ins.op == "return")
+        {
+            // ins.arg1 holds temp return value
+            if (!callStack.empty())
+            {
+                auto frame = callStack.back();
+                callStack.pop_back();
+                // move return value into target temp
+                if (frame.has_target)
+                {
+                    if (env.count(ins.arg1)) env[frame.return_target] = env[ins.arg1];
+                    else if (envF.count(ins.arg1)) envF[frame.return_target] = envF[ins.arg1];
+                    else if (envStr.count(ins.arg1)) envStr[frame.return_target] = envStr[ins.arg1];
+                }
+                next_ip = frame.return_ip;
+            }
         }
         else if (ins.op == "send")
         {

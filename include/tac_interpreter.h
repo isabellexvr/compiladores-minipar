@@ -22,7 +22,11 @@ public:
 private:
     std::unordered_map<std::string, int> env;            // variáveis e temporários
     std::unordered_map<std::string, std::string> envStr; // valores string
+    std::unordered_map<std::string, double> envF;         // valores float
     std::unordered_map<std::string, ChannelRuntime> channels;
+    std::unordered_map<std::string, std::vector<std::string>> funcParams; // nome -> lista params
+    struct CallFrame { size_t return_ip; std::string return_target; bool has_target; };
+    std::vector<CallFrame> callStack;
     // estado para construção de mensagem em envio
     std::string buildingChannel;
     size_t expectedSendArgs = 0;
@@ -32,7 +36,7 @@ private:
     size_t expectedRecvArgs = 0;
     std::vector<int> receivedMessage;
 
-    int valueOf(const std::string &token) const;            // resolve nome ou literal
+    double valueOf(const std::string &token) const;            // resolve nome ou literal
     std::string strValueOf(const std::string &token) const; // resolve string
     void finalizeSend();
     void finalizeReceive();

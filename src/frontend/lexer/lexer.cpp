@@ -68,12 +68,14 @@ Token Lexer::read_number()
     string number;
     int start_line = line;
     int start_column = column;
-    while (current_char != '\0' && isdigit(current_char))
+    bool hasDot = false;
+    while (current_char != '\0' && (isdigit(current_char) || (!hasDot && current_char == '.')))
     {
+        if (current_char == '.') hasDot = true;
         number += current_char;
         advance();
     }
-    return Token(TokenType::NUMBER, number, start_line, start_column);
+    return Token(hasDot ? TokenType::FLOAT : TokenType::NUMBER, number, start_line, start_column);
 }
 
 Token Lexer::read_string()

@@ -466,6 +466,14 @@ unique_ptr<ASTNode> Parser::parse_primary()
         consume();
         return num_node;
     }
+    else if (match(FLOAT))
+    {
+        auto f_node = make_unique<FloatNode>();
+        stringstream ss(current().value);
+        ss >> f_node->value;
+        consume();
+        return f_node;
+    }
     else if (match(STRING_LITERAL))
     {
         auto str_node = make_unique<StringNode>();

@@ -28,6 +28,7 @@ enum TokenType
     // Identificadores e literais
     IDENTIFIER,
     NUMBER,
+    FLOAT,
     STRING_LITERAL,
     // Operadores aritméticos / atribuição
     PLUS,

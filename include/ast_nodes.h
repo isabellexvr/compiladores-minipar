@@ -181,6 +181,13 @@ struct NumberNode : public ASTNode
     std::string toString() const override;
 };
 
+struct FloatNode : public ASTNode
+{
+    double value;
+    void accept(ASTVisitor &visitor) override; // placeholder visiting not yet implemented
+    std::string toString() const override { return "Float:" + std::to_string(value); }
+};
+
 struct StringNode : public ASTNode
 {
     std::string value;
