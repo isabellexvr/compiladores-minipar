@@ -12,6 +12,11 @@ static unordered_map<string, TokenType> keywords = {
     {"while", TokenType::WHILE},
     {"print", TokenType::PRINT},
     {"input", TokenType::INPUT},
+    {"fun", TokenType::FUN},
+    {"return", TokenType::RETURN},
+    {"true", TokenType::TRUE},
+    {"false", TokenType::FALSE},
+    {"COMP", TokenType::COMP},
     {"int", TokenType::INT},
     {"bool", TokenType::BOOL},
     {"string", TokenType::STRING},
@@ -63,11 +68,38 @@ Token Lexer::read_number()
     string number;
     int start_line = line;
     int start_column = column;
+    bool hasDot = false;
+    int digitsBefore = 0;
+    int digitsAfter = 0;
+
+    // Primeiro parte inteira
     while (current_char != '\0' && isdigit(current_char))
     {
         number += current_char;
+        digitsBefore++;
         advance();
     }
+    // Parte fracionária opcional
+    if (current_char == '.')
+    {
+        // Olhar próxima posição: se não houver dígito depois, não tratar como float
+        if (peek() != '\0' && isdigit(peek()))
+        {
+            hasDot = true;
+            number += current_char; // '.'
+            advance();
+            while (current_char != '\0' && isdigit(current_char))
+            {
+                number += current_char;
+                digitsAfter++;
+                advance();
+            }
+        }
+        // Caso contrário não consome '.' aqui; deixa para tratador geral (será token DOT separado)
+    }
+    // Classificação: precisa ter pelo menos um dígito antes e depois do ponto para ser FLOAT
+    if (hasDot && digitsBefore > 0 && digitsAfter > 0)
+        return Token(TokenType::FLOAT, number, start_line, start_column);
     return Token(TokenType::NUMBER, number, start_line, start_column);
 }
 
@@ -120,6 +152,7 @@ vector<Token> Lexer::tokenize()
             tokens.push_back(read_number());
             continue;
         }
+        // Não aceitar '.5' como float; somente d+.d+; caso '.' venha seguido de dígito sem parte inteira, token DOT + número posterior.
         if (current_char == '"')
         {
             tokens.push_back(read_string());
@@ -146,6 +179,20 @@ vector<Token> Lexer::tokenize()
         case '/':
             tokens.push_back(Token(TokenType::DIVIDE, "/", start_line, start_column));
             break;
+        case '&':
+            if (peek() == '&')
+            {
+                tokens.push_back(Token(TokenType::AND, "&&", start_line, start_column));
+                advance();
+            }
+            break;
+        case '|':
+            if (peek() == '|')
+            {
+                tokens.push_back(Token(TokenType::OR, "||", start_line, start_column));
+                advance();
+            }
+            break;
         case '=':
             if (peek() == '=')
             {
@@ -162,6 +209,10 @@ vector<Token> Lexer::tokenize()
             {
                 tokens.push_back(Token(TokenType::NOT_EQUAL, "!=", start_line, start_column));
                 advance();
+            }
+            else
+            {
+                tokens.push_back(Token(TokenType::NOT, "!", start_line, start_column));
             }
             break;
         case '<':
@@ -198,11 +249,20 @@ vector<Token> Lexer::tokenize()
         case '}':
             tokens.push_back(Token(TokenType::RBRACE, "}", start_line, start_column));
             break;
+        case '[':
+            tokens.push_back(Token(TokenType::LBRACKET, "[", start_line, start_column));
+            break;
+        case ']':
+            tokens.push_back(Token(TokenType::RBRACKET, "]", start_line, start_column));
+            break;
         case ';':
             tokens.push_back(Token(TokenType::SEMICOLON, ";", start_line, start_column));
             break;
         case ',':
             tokens.push_back(Token(TokenType::COMMA, ",", start_line, start_column));
+            break;
+        case '.':
+            tokens.push_back(Token(TokenType::DOT, ".", start_line, start_column));
             break;
         default:
             break;

@@ -1,0 +1,32 @@
+# Programa de Teste 4 - Rede Neural XOR
+# Implementação simplificada para testar o compilador
+
+fun sigmoid(x) {
+  SEQ
+    # Implementação simples da sigmoid
+    if (x >= 0) SEQ return 1;
+    else SEQ return 0;
+}
+
+SEQ
+  print "Iniciando teste XOR simplificado..."
+  
+  # Dados XOR
+  entradas = [[0, 0], [0, 1], [1, 0], [1, 1]]
+  saidas_desejadas = [0, 1, 1, 0]
+  
+  # Teste simples - percorrer os dados
+  i = 0
+  while (i < 4) SEQ
+    entrada1 = entradas[i][0]
+    entrada2 = entradas[i][1]
+    saida_esperada = saidas_desejadas[i]
+    
+    # Cálculo simplificado (apenas para teste do compilador)
+    resultado = sigmoid(entrada1 + entrada2)
+    
+    print "Entrada:", entrada1, entrada2, "Esperado:", saida_esperada, "Obtido:", resultado
+    
+    i = i + 1
+  
+  print "Fim do teste XOR"

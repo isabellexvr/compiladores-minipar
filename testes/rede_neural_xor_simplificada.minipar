@@ -1,0 +1,22 @@
+Teste final com XOR simplificado SEM arrays multidimensionais:
+
+# XOR Simplificado - Sem arrays complexos
+fun sigmoid(x) {
+  SEQ
+    if (x >= 0) SEQ return 1;
+    else SEQ return 0;
+}
+
+SEQ
+  # Dados XOR como variáveis separadas
+  entrada1_0 = 0; entrada2_0 = 0; saida0 = 0;
+  entrada1_1 = 0; entrada2_1 = 1; saida1 = 1; 
+  entrada1_2 = 1; entrada2_2 = 0; saida2 = 1;
+  entrada1_3 = 1; entrada2_3 = 1; saida3 = 0;
+  
+  # Teste cada caso
+  resultado = sigmoid(entrada1_0 + entrada2_0);
+  print "Caso 1:", entrada1_0, entrada2_0, "Esperado:", saida0, "Obtido:", resultado;
+  
+  resultado = sigmoid(entrada1_1 + entrada2_1);
+  print "Caso 2:", entrada1_1, entrada2_1, "Esperado:", saida1, "Obtido:", resultado;

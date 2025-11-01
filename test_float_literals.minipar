@@ -1,0 +1,6 @@
+SEQ
+x = 0.5
+y = 1.0
+z = 0.1
+pi = 3.14
+print x, y, z, pi;

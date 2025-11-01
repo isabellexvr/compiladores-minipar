@@ -1,0 +1,5 @@
+fun activation(x){ if (x >= 0) SEQ return 1; else SEQ return 0; }
+SEQ
+a = 5
+r = activation(a)
+print r;

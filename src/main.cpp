@@ -3,12 +3,16 @@
 #include <sstream>
 #include <iomanip>
 #include <chrono>
+#include <thread>
+#include <mutex>
 #include "lexer.h"
 #include "parser.h"
 #include "ast_printer.h"
 #include "tac_generator.h"
 #include "arm_generator.h"
 #include "symbol_table.h"
+#include "tac_interpreter.h"
+#include "semantic_channels.h"
 
 using namespace std;
 
@@ -52,6 +56,7 @@ static std::string token_category(TokenType t)
     case TokenType::IDENTIFIER:
         return "IDENTIFIER";
     case TokenType::NUMBER:
+    case TokenType::FLOAT:
     case TokenType::STRING_LITERAL:
         return "LITERAL";
     case TokenType::PLUS:
@@ -145,12 +150,18 @@ int main(int argc, char *argv[])
         }
         std::cout << s.name << " | " << stype << " | " << (s.data_type.empty() ? "int" : s.data_type) << " | scope=global\n";
     }
+    if (success)
+    {
+        std::cout << "Channel Arity Analysis:\n";
+        analyze_channel_arities(static_cast<ProgramNode *>(ast.get()), std::cout);
+    }
 
     std::cout << "\n=== INTERMEDIATE (TAC) ===\n";
     std::vector<TACInstruction> tac;
     if (success)
     {
         TACGenerator gen;
+        // Geração padrão do programa completo
         tac = gen.generate(static_cast<ProgramNode *>(ast.get()));
     }
     std::cout << "instructions: " << tac.size() << "\n";
@@ -165,6 +176,14 @@ int main(int argc, char *argv[])
             opType = "CONDITIONAL_JUMP";
         else if (i.op == "goto")
             opType = "JUMP";
+        else if (i.op == "send")
+            opType = "CHANNEL_SEND";
+        else if (i.op == "send_arg")
+            opType = "CHANNEL_SEND_ARG";
+        else if (i.op == "receive")
+            opType = "CHANNEL_RECEIVE";
+        else if (i.op == "recv_arg")
+            opType = "CHANNEL_RECV_ARG";
         else if (i.op.empty())
             opType = "ASSIGN";
         else
@@ -185,10 +204,72 @@ int main(int argc, char *argv[])
     std::cout << "\n=== EXECUTION (SIMULATED) ===\n";
     if (success)
     {
-        TACGenerator gen;
-        std::stringstream ss;
-        gen.generate(static_cast<ProgramNode *>(ast.get()));
-        gen.print_tac(ss); /* Could reuse print_tac modification */
+        bool hasFunction = false;
+        if (auto prog = static_cast<ProgramNode *>(ast.get()))
+        {
+            for (auto &st : prog->statements)
+                if (dynamic_cast<FunctionDeclNode *>(st.get()))
+                {
+                    hasFunction = true;
+                    break;
+                }
+        }
+        // permitir execução mesmo com funções
+        // Execução paralela real para blocos PAR: cada SEQ em sua thread
+        bool hasPar = false;
+        if (auto prog = static_cast<ProgramNode *>(ast.get()))
+        {
+            for (auto &st : prog->statements)
+            {
+                if (dynamic_cast<ParNode *>(st.get()))
+                {
+                    hasPar = true;
+                    break;
+                }
+            }
+        }
+        if (!hasPar)
+        {
+            TACInterpreter interpreter;
+            std::stringstream runtimeOut;
+            auto finalEnv = interpreter.interpret(tac, runtimeOut);
+            std::cout << "output:\n"
+                      << runtimeOut.str();
+            if (finalEnv.count("resultado"))
+                std::cout << "resultado(final)=" << finalEnv["resultado"] << "\n";
+        }
+        else
+        {
+            std::cout << "output (parallel):\n";
+            std::vector<std::thread> threads;
+            std::mutex outMutex;
+            if (auto prog = static_cast<ProgramNode *>(ast.get()))
+            {
+                for (auto &st : prog->statements)
+                {
+                    if (auto par = dynamic_cast<ParNode *>(st.get()))
+                    {
+                        for (auto &seqPtr : par->statements)
+                        {
+                            if (auto seq = dynamic_cast<SeqNode *>(seqPtr.get()))
+                            {
+                                TACGenerator localGen;
+                                auto localTAC = localGen.generate_from_seq(seq);
+                                threads.emplace_back([localTAC, &outMutex]()
+                                                     {
+                                    TACInterpreter interpreter;
+                                    std::stringstream thOut;
+                                    interpreter.interpret(localTAC, thOut);
+                                    std::lock_guard<std::mutex> lk(outMutex);
+                                    std::cout << thOut.str(); });
+                            }
+                        }
+                    }
+                }
+            }
+            for (auto &t : threads)
+                t.join();
+        }
     }
     std::cout << "done: " << (success ? "0" : "1") << "\n";
     return success ? 0 : 1;

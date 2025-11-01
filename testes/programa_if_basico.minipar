@@ -1,0 +1,11 @@
+# Teste IF basico
+SEQ
+  x = 5;
+  y = 0;
+  if(x > 3)
+  SEQ
+    y = 1;
+  else
+  SEQ
+    y = 2;
+  print y;

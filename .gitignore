@@ -38,8 +38,6 @@ build/
 cmake-build*/
 CMakeCache.txt
 CMakeFiles/
-Makefile
-Makefile.emscripten
 *.make
 
 # If you want to keep your hand-maintained Makefiles, comment out previous lines

@@ -15,6 +15,11 @@ enum TokenType
     WHILE,
     PRINT,
     INPUT,
+    FUN,
+    RETURN,
+    TRUE,
+    FALSE,
+    COMP,
     // Tipos
     INT,
     BOOL,
@@ -23,27 +28,35 @@ enum TokenType
     // Identificadores e literais
     IDENTIFIER,
     NUMBER,
+    FLOAT,
     STRING_LITERAL,
     // Operadores aritméticos / atribuição
     PLUS,
     MINUS,
     MULTIPLY,
     DIVIDE,
-    ASSIGN, // =
-    // Operadores de comparação
-    EQUAL,        // ==
-    NOT_EQUAL,    // !=
+    ASSIGN,        // =
+                   // Operadores de comparação
+    EQUAL,         // ==
+    NOT_EQUAL,     // !=
     LESS,          // <
     LESS_EQUAL,    // <=
     GREATER,       // >
     GREATER_EQUAL, // >=
-    // Delimitadores
+                   // Operadores lógicos
+    AND,           // &&
+    OR,            // ||
+    NOT,           // !
+                   // Delimitadores
     LPAREN,
     RPAREN,
     LBRACE,
     RBRACE,
+    LBRACKET,
+    RBRACKET,
     SEMICOLON,
     COMMA,
+    DOT,
     // Comentário e fim
     COMMENT,
     END

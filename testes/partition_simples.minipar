@@ -1,0 +1,11 @@
+fun partition_simples(arr, start, end) {
+  SEQ
+    # Versão simplificada - sempre retorna meio
+    meio = (start + end) / 2
+    return meio
+}
+
+SEQ
+  arr = [33, 12, 98, 5]
+  p = partition_simples(arr, 0, 3)
+  print "Pivô índice:", p

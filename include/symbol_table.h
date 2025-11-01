@@ -20,7 +20,9 @@ struct Symbol
 {
     std::string name;
     SymbolType type;
-    std::string data_type; // "int", "bool", "string", etc.
+    std::string data_type;   // "int", "bool", "string", etc.
+    bool has_return = false; // marca se função possui retorno
+    std::string return_type; // tipo inferido do retorno
 
     Symbol(const std::string &n, SymbolType t, const std::string &dt = "")
         : name(n), type(t), data_type(dt) {}

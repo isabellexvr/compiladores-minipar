@@ -1,0 +1,17 @@
+fun sigmoid(x) {
+  SEQ
+    if (x >= 0) SEQ return 1;
+    else SEQ return 0;
+}
+
+SEQ
+  entradas1 = [0,0,1,1];
+  entradas2 = [0,1,0,1];
+  saidas    = [0,1,1,0];
+
+  i = 0;
+  while (i < 4) SEQ
+    soma = entradas1[i] + entradas2[i];
+    resultado = sigmoid(soma);
+    print "Caso", i, "Entradas:", entradas1[i], entradas2[i], "Esperado:", saidas[i], "Obtido:", resultado;
+    i = i + 1;

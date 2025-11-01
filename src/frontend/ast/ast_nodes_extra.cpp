@@ -1,0 +1,1 @@
+// intentionally left empty to avoid duplicate symbol definitions; legacy placeholder

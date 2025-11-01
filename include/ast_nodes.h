@@ -76,8 +76,7 @@ struct AssignmentNode : public ASTNode
 
 struct PrintNode : public ASTNode
 {
-    std::unique_ptr<ASTNode> expression;
-
+    std::vector<std::unique_ptr<ASTNode>> expressions; // múltiplos argumentos
     void accept(ASTVisitor &visitor) override;
     std::string toString() const override;
 };
@@ -94,6 +93,7 @@ struct SendNode : public ASTNode
 {
     std::string channelName;
     std::vector<std::unique_ptr<ASTNode>> arguments;
+    std::string component;
 
     void accept(ASTVisitor &visitor) override;
     std::string toString() const override;
@@ -103,7 +103,31 @@ struct ReceiveNode : public ASTNode
 {
     std::string channelName;
     std::vector<std::string> variables;
+    std::string component;
+    void accept(ASTVisitor &visitor) override;
+    std::string toString() const override;
+};
 
+struct FunctionDeclNode : public ASTNode
+{
+    std::string name;
+    std::vector<std::string> params;
+    std::unique_ptr<ASTNode> body; // SeqNode or single
+    void accept(ASTVisitor &visitor) override;
+    std::string toString() const override;
+};
+
+struct CallNode : public ASTNode
+{
+    std::string name;
+    std::vector<std::unique_ptr<ASTNode>> args;
+    void accept(ASTVisitor &visitor) override;
+    std::string toString() const override;
+};
+
+struct ReturnNode : public ASTNode
+{
+    std::unique_ptr<ASTNode> value;
     void accept(ASTVisitor &visitor) override;
     std::string toString() const override;
 };
@@ -156,6 +180,13 @@ struct NumberNode : public ASTNode
     std::string toString() const override;
 };
 
+struct FloatNode : public ASTNode
+{
+    double value;
+    void accept(ASTVisitor &visitor) override; // placeholder visiting not yet implemented
+    std::string toString() const override { return "Float:" + std::to_string(value); }
+};
+
 struct StringNode : public ASTNode
 {
     std::string value;
@@ -176,6 +207,33 @@ struct BooleanNode : public ASTNode
 {
     bool value;
 
+    void accept(ASTVisitor &visitor) override;
+    std::string toString() const override;
+};
+
+// Array literal
+struct ArrayLiteralNode : public ASTNode
+{
+    std::vector<std::unique_ptr<ASTNode>> elements;
+    void accept(ASTVisitor &visitor) override;
+    std::string toString() const override { return "ArrayLiteral(" + std::to_string(elements.size()) + " elements)"; }
+};
+
+// Array access: base[index]
+struct ArrayAccessNode : public ASTNode
+{
+    std::unique_ptr<ASTNode> base;  // typically IdentifierNode or another ArrayAccessNode
+    std::unique_ptr<ASTNode> index; // expression yielding integer
+    void accept(ASTVisitor &visitor) override;
+    std::string toString() const override { return "ArrayAccess"; }
+};
+
+// Array element assignment: arr[index] = value
+struct ArrayAssignmentNode : public ASTNode
+{
+    std::unique_ptr<ASTNode> array; // IdentifierNode (base) for now
+    std::unique_ptr<ASTNode> index; // expression
+    std::unique_ptr<ASTNode> value; // expression
     void accept(ASTVisitor &visitor) override;
     std::string toString() const override;
 };

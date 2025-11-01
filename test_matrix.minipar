@@ -1,0 +1,5 @@
+SEQ
+  matriz = [[1, 2], [3, 4]];
+  x = matriz[0][1];
+  y = matriz[1][0];
+  print "x:", x, "y:", y;
