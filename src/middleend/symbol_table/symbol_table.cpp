@@ -100,6 +100,10 @@ static void walk_node(ASTNode *node, SymbolTable &table, Symbol *currentFunction
     {
         register_identifier(input_n->identifier, table);
     }
+    else if (dynamic_cast<InputCallNode *>(node))
+    {
+        // expressão input() não introduz novo símbolo mas retorna int
+    }
     else if (auto bin = dynamic_cast<BinaryOpNode *>(node))
     {
         walk_node(bin->left.get(), table, currentFunction);

@@ -57,6 +57,9 @@ std::string InputNode::toString() const
     return "Input(" + identifier + ")";
 }
 
+// InputCallNode
+void InputCallNode::accept(ASTVisitor &visitor) { visitor.visit(*this); }
+
 // SendNode
 void SendNode::accept(ASTVisitor &visitor) { visitor.visit(*this); }
 std::string SendNode::toString() const

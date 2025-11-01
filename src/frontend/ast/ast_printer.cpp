@@ -144,6 +144,11 @@ void ASTPrinter::visit(InputNode &node)
     printLine("Input: " + node.identifier);
 }
 
+void ASTPrinter::visit(InputCallNode &node)
+{
+    printLine("InputCall()");
+}
+
 void ASTPrinter::visit(SendNode &node)
 {
     printLine("Send: " + node.channelName + (node.component.empty() ? "" : " from=" + node.component));

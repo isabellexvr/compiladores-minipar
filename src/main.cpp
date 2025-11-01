@@ -87,135 +87,135 @@ static std::string token_category(TokenType t)
 
 int main(int argc, char *argv[])
 {
-    if (argc != 2)
+    if (argc < 2 || argc > 3)
     {
-        std::cout << "Uso: " << argv[0] << " <arquivo.minipar>" << std::endl;
+        std::cout << "Uso: " << argv[0] << " <arquivo.minipar> [--verbose|-v]\n";
         return 1;
     }
+    bool verbose = (argc == 3) && (std::string(argv[2]) == "--verbose" || std::string(argv[2]) == "-v");
+
     std::string source_code = read_file(argv[1]);
     if (source_code.empty())
         return 1;
 
-    // Header estilo phases
-    std::cout << "=== COMPILATION METADATA ===\n";
-    std::cout << "timestamp: " << timestamp_iso_utc() << "\n";
-    std::cout << "compilerVersion: MiniPar 2025.1\n";
-    std::cout << "sourceLength: " << source_code.size() << "\n";
+    if (verbose)
+    {
+        std::cout << "=== COMPILATION METADATA ===\n";
+        std::cout << "timestamp: " << timestamp_iso_utc() << "\n";
+        std::cout << "compilerVersion: MiniPar 2025.1\n";
+        std::cout << "sourceLength: " << source_code.size() << "\n";
+    }
 
     Lexer lexer(source_code);
     auto tokens = lexer.tokenize();
-
-    std::cout << "\n=== LEXICAL ===\n";
-    std::cout << "totalTokens: " << tokens.size() << "\n";
-    std::cout << "Tokens (type/category/value@line:col)\n";
-    for (const auto &tk : tokens)
+    if (verbose)
     {
-        std::cout << static_cast<int>(tk.type) << "/" << token_category(tk.type) << "/'" << tk.value << "'@" << tk.line << ':' << tk.column << "\n";
+        std::cout << "\n=== LEXICAL ===\n";
+        std::cout << "tokens: " << tokens.size() << "\n";
+        std::cout << "(type/category/value@line:col)\n";
+        for (const auto &tk : tokens)
+            std::cout << static_cast<int>(tk.type) << "/" << token_category(tk.type) << "/'" << tk.value << "'@" << tk.line << ':' << tk.column << "\n";
     }
 
     Parser parser(tokens);
     auto ast = parser.parse();
     bool success = ast != nullptr;
-
-    std::cout << "\n=== SYNTAX ===\nstatus: " << (success ? "SUCCESS" : "ERROR") << "\n";
-    if (success)
+    if (verbose)
     {
-        ASTPrinter printer;
-        std::cout << "AST:\n"
-                  << printer.print(*ast) << "\n";
+        std::cout << "\n=== SYNTAX ===\nstatus: " << (success ? "SUCCESS" : "ERROR") << "\n";
+        if (success)
+        {
+            ASTPrinter printer;
+            std::cout << "AST:\n"
+                      << printer.print(*ast) << "\n";
+        }
     }
 
-    std::cout << "\n=== SEMANTIC ===\n";
+    if (verbose)
+        std::cout << "\n=== SEMANTIC ===\n";
     SymbolTable symtab;
     if (success)
     {
         build_symbol_table(ast.get(), symtab);
     }
     auto all = symtab.get_all_symbols();
-    std::cout << "symbols: " << all.size() << "\n";
-    for (const auto &s : all)
+    if (verbose)
     {
-        std::string stype;
-        switch (s.type)
+        std::cout << "symbols: " << all.size() << "\n";
+        for (const auto &s : all)
         {
-        case SymbolType::VARIABLE:
-            stype = "VARIABLE";
-            break;
-        case SymbolType::FUNCTION:
-            stype = "FUNCTION";
-            break;
-        case SymbolType::CHANNEL:
-            stype = "CHANNEL";
-            break;
+            std::string stype;
+            switch (s.type)
+            {
+            case SymbolType::VARIABLE:
+                stype = "VARIABLE";
+                break;
+            case SymbolType::FUNCTION:
+                stype = "FUNCTION";
+                break;
+            case SymbolType::CHANNEL:
+                stype = "CHANNEL";
+                break;
+            }
+            std::cout << s.name << " | " << stype << " | " << (s.data_type.empty() ? "int" : s.data_type) << "\n";
         }
-        std::cout << s.name << " | " << stype << " | " << (s.data_type.empty() ? "int" : s.data_type) << " | scope=global\n";
-    }
-    if (success)
-    {
-        std::cout << "Channel Arity Analysis:\n";
-        analyze_channel_arities(static_cast<ProgramNode *>(ast.get()), std::cout);
+        if (success)
+        {
+            std::cout << "Channel Arity Analysis:\n";
+            analyze_channel_arities(static_cast<ProgramNode *>(ast.get()), std::cout);
+        }
     }
 
-    std::cout << "\n=== INTERMEDIATE (TAC) ===\n";
-    std::vector<TACInstruction> tac;
+    std::vector<TACInstruction> tac;        // TAC principal
+    std::vector<TACInstruction> tacForExec; // reservado se precisar filtrar
     if (success)
     {
         TACGenerator gen;
-        // Geração padrão do programa completo
         tac = gen.generate(static_cast<ProgramNode *>(ast.get()));
     }
-    std::cout << "instructions: " << tac.size() << "\n";
-    for (const auto &i : tac)
+    if (verbose)
     {
-        std::string opType;
-        if (i.op == "print")
-            opType = "PRINT";
-        else if (i.op == "label")
-            opType = "LABEL";
-        else if (i.op == "if_false")
-            opType = "CONDITIONAL_JUMP";
-        else if (i.op == "goto")
-            opType = "JUMP";
-        else if (i.op == "send")
-            opType = "CHANNEL_SEND";
-        else if (i.op == "send_arg")
-            opType = "CHANNEL_SEND_ARG";
-        else if (i.op == "receive")
-            opType = "CHANNEL_RECEIVE";
-        else if (i.op == "recv_arg")
-            opType = "CHANNEL_RECV_ARG";
-        else if (i.op.empty())
-            opType = "ASSIGN";
-        else
-            opType = "BINARY";
-        std::cout << i.result << " = (" << i.op << ") " << i.arg1 << (i.arg2.empty() ? "" : " , ") << i.arg2 << " | type=" << opType << "\n";
+        std::cout << "\n=== INTERMEDIATE (TAC) ===\n";
+        std::cout << "instructions: " << tac.size() << "\n";
+        for (const auto &i : tac)
+        {
+            std::string opType;
+            if (i.op == "print")
+                opType = "PRINT";
+            else if (i.op == "label")
+                opType = "LABEL";
+            else if (i.op == "if_false")
+                opType = "CONDITIONAL_JUMP";
+            else if (i.op == "goto")
+                opType = "JUMP";
+            else if (i.op == "send")
+                opType = "CHANNEL_SEND";
+            else if (i.op == "send_arg")
+                opType = "CHANNEL_SEND_ARG";
+            else if (i.op == "receive")
+                opType = "CHANNEL_RECEIVE";
+            else if (i.op == "recv_arg")
+                opType = "CHANNEL_RECV_ARG";
+            else if (i.op.empty())
+                opType = "ASSIGN";
+            else
+                opType = "BINARY";
+            std::cout << i.result << " = (" << i.op << ") " << i.arg1 << (i.arg2.empty() ? "" : " , ") << i.arg2 << " | type=" << opType << "\n";
+        }
     }
 
-    std::cout << "\n=== CODEGEN (ARMv7) ===\n";
-    if (success)
+    if (verbose && success)
     {
+        std::cout << "\n=== CODEGEN (ARMv7) ===\n";
         ARMGenerator arm;
         auto code = arm.generate(tac);
         for (const auto &line : code)
             std::cout << line << "\n";
     }
 
-    // Opcional: Execução simulada
-    std::cout << "\n=== EXECUTION (SIMULATED) ===\n";
+    // Execução simulada (sempre mostrar saída limpa se sucesso)
     if (success)
     {
-        bool hasFunction = false;
-        if (auto prog = static_cast<ProgramNode *>(ast.get()))
-        {
-            for (auto &st : prog->statements)
-                if (dynamic_cast<FunctionDeclNode *>(st.get()))
-                {
-                    hasFunction = true;
-                    break;
-                }
-        }
-        // permitir execução mesmo com funções
-        // Execução paralela real para blocos PAR: cada SEQ em sua thread
         bool hasPar = false;
         if (auto prog = static_cast<ProgramNode *>(ast.get()))
         {
@@ -228,49 +228,45 @@ int main(int argc, char *argv[])
                 }
             }
         }
+        std::cout << "\n=== PROGRAM OUTPUT ===\n";
         if (!hasPar)
         {
             TACInterpreter interpreter;
             std::stringstream runtimeOut;
             auto finalEnv = interpreter.interpret(tac, runtimeOut);
-            std::cout << "output:\n"
-                      << runtimeOut.str();
-            if (finalEnv.count("resultado"))
-                std::cout << "resultado(final)=" << finalEnv["resultado"] << "\n";
+            std::cout << runtimeOut.str();
         }
         else
         {
-            std::cout << "output (parallel):\n";
-            std::vector<std::thread> threads;
-            std::mutex outMutex;
+            // Executa blocos PAR seq a seq (simplificação) para saída determinística em modo não-verbose
             if (auto prog = static_cast<ProgramNode *>(ast.get()))
             {
                 for (auto &st : prog->statements)
                 {
                     if (auto par = dynamic_cast<ParNode *>(st.get()))
                     {
+                        size_t idx = 0;
                         for (auto &seqPtr : par->statements)
                         {
                             if (auto seq = dynamic_cast<SeqNode *>(seqPtr.get()))
                             {
                                 TACGenerator localGen;
                                 auto localTAC = localGen.generate_from_seq(seq);
-                                threads.emplace_back([localTAC, &outMutex]()
-                                                     {
-                                    TACInterpreter interpreter;
-                                    std::stringstream thOut;
-                                    interpreter.interpret(localTAC, thOut);
-                                    std::lock_guard<std::mutex> lk(outMutex);
-                                    std::cout << thOut.str(); });
+                                TACInterpreter interpreter;
+                                std::stringstream thOut;
+                                interpreter.interpret(localTAC, thOut);
+                                if (verbose)
+                                    std::cout << "[THREAD " << idx << "]\n";
+                                std::cout << thOut.str();
+                                idx++;
                             }
                         }
                     }
                 }
             }
-            for (auto &t : threads)
-                t.join();
         }
     }
-    std::cout << "done: " << (success ? "0" : "1") << "\n";
+    if (verbose)
+        std::cout << "done: " << (success ? "0" : "1") << "\n";
     return success ? 0 : 1;
 }

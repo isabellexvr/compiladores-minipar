@@ -56,6 +56,11 @@ Fluxo resumido:
 Léxico / Sintático
 
 - Palavras‑chave: `seq`, `par`, `while`, `if`, `else`, `print`, `input`, `fun`, `return`, `true`, `false`, `c_channel`, tipos básicos (`int`, `bool`, `string`).
+### Palavras‑chave Reconhecidas (Lexer)
+Lista exata das keywords mapeadas no lexer (case‑insensitive):
+`seq`, `par`, `if`, `else`, `while`, `print`, `input`, `fun`, `return`, `true`, `false`, `comp`, `int`, `bool`, `string`, `c_channel`.
+
+Observação: o lexer converte para minúsculas; identificadores não coincidentes permanecem como `IDENTIFIER`.
 - Literais: inteiros, floats (`d+.d+`), strings com escape de aspas (`"`), booleanos, arrays literais (`[1, 2, 3]`, aninhados `[[1,2],[3,4]]`).
 - Operadores: aritméticos `+ - * /`, comparação `== != < <= > >=`, lógicos `&& || !`, unário `-`.
 - Identificadores case‑insensitive para palavras‑chave (normalização para minúsculas no lexer).

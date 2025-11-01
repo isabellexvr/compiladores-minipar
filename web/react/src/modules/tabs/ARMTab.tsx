@@ -32,37 +32,37 @@ const ARMTab: React.FC<ARMTabProps> = ({ assemblyCode, className = '' }) => {
     };
     const parseAssemblyCode = (code: string) => {
         if (!code) return [];
-        
+
         const lines = code.split('\n');
         const processedLines: string[] = [];
-        
+
         for (let i = 0; i < lines.length; i++) {
             const currentLine = lines[i].trim();
             if (currentLine.length === 0) continue;
-            
+
             // Juntar linhas que são continuação de strings
             if (processedLines.length > 0) {
                 const lastLine = processedLines[processedLines.length - 1];
-                if ((lastLine.includes('"') && !lastLine.match(/".*"/)) || 
+                if ((lastLine.includes('"') && !lastLine.match(/".*"/)) ||
                     (lastLine.includes('.asciz') && !lastLine.endsWith('"'))) {
                     processedLines[processedLines.length - 1] += ' ' + currentLine;
                     continue;
                 }
             }
-            
+
             processedLines.push(currentLine);
         }
-        
+
         return processedLines
             .filter(line => line.length > 0)
             .map((line, index) => {
                 let type = 'other';
                 let description = '';
-                
+
                 if (line.startsWith('.')) {
                     type = 'directive';
                     description = 'Diretiva do assembler';
-                } 
+                }
                 else if (line.endsWith(':')) {
                     type = 'label';
                     description = 'Label/marcador';
@@ -79,8 +79,8 @@ const ARMTab: React.FC<ARMTabProps> = ({ assemblyCode, className = '' }) => {
                     type = 'instruction';
                     description = 'Instrução de movimento/memória';
                 }
-                else if (line.startsWith('add') || line.startsWith('sub') || 
-                         line.startsWith('mul') || line.startsWith('div')) {
+                else if (line.startsWith('add') || line.startsWith('sub') ||
+                    line.startsWith('mul') || line.startsWith('div')) {
                     type = 'instruction';
                     description = 'Instrução aritmética';
                 }
@@ -100,11 +100,11 @@ const ARMTab: React.FC<ARMTabProps> = ({ assemblyCode, className = '' }) => {
                     type = 'syscall';
                     description = 'Chamada de sistema';
                 }
-                
-                return { 
-                    line, 
-                    type, 
-                    description, 
+
+                return {
+                    line,
+                    type,
+                    description,
                     number: index + 1
                 };
             });
@@ -233,7 +233,7 @@ const ARMTab: React.FC<ARMTabProps> = ({ assemblyCode, className = '' }) => {
                 <div className="info-section">
                     <h4>📋 Sobre o Código ARMv7:</h4>
                     <p>
-                        Este código assembly é específico para processadores <strong>ARMv7</strong> e pode ser 
+                        Este código assembly é específico para processadores <strong>ARMv7</strong> e pode ser
                         executado no emulador <strong>CPUlator</strong>.
                     </p>
                 </div>
@@ -251,13 +251,13 @@ const ARMTab: React.FC<ARMTabProps> = ({ assemblyCode, className = '' }) => {
                         <div
                             key={item.number}
                             className="arm-line"
-                            style={{ 
+                            style={{
                                 '--line-color': getLineColor(item.type)
                             } as any}
                             title={`${item.description} | Linha ${item.number}`}
                         >
                             <div className="line-number">{item.number}</div>
-                            <div 
+                            <div
                                 className="line-icon"
                                 style={{ backgroundColor: getLineColor(item.type) }}
                             >

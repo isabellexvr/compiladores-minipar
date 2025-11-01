@@ -583,6 +583,24 @@ unique_ptr<ASTNode> Parser::parse_primary()
             return un;
         }
     }
+    // input() como expressão: token INPUT seguido de '(' ')' ou IDENTIFIER 'input' '(' ')'
+    if (match(INPUT))
+    {
+        // padrão: input IDENT  (statement) já tratado em parse_statement; aqui queremos input()
+        // Se próximo for LPAREN tratamos como chamada expressão
+        consume();
+        if (match(LPAREN))
+        {
+            consume();
+            if (match(RPAREN))
+            {
+                consume();
+                auto inCall = make_unique<InputCallNode>();
+                return inCall;
+            }
+        }
+        // fallback: não era expressão input(), retornar nullptr para forçar erro de sintaxe leve
+    }
     if (match(NUMBER))
     {
         auto num_node = make_unique<NumberNode>();

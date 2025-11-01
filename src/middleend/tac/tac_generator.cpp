@@ -493,6 +493,13 @@ string TACGenerator::generate_expression(ASTNode *node)
     {
         return emit_call(call);
     }
+    else if (auto inCall = dynamic_cast<InputCallNode *>(node))
+    {
+        // gera temp = input()
+        string temp = new_temp();
+        instructions.push_back(TACInstruction(temp, "input", ""));
+        return temp;
+    }
     // REMOVA a parte do UnaryOpNode por enquanto
 
     return "error";
@@ -558,6 +565,10 @@ void TACGenerator::print_tac(std::ostream &out)
         else if (instr.op == "array_concat")
         {
             out << instr.result << " = concat " << instr.arg1 << ", " << instr.arg2 << "\n";
+        }
+        else if (instr.op == "input")
+        {
+            out << instr.result << " = input()\n";
         }
         else
         {

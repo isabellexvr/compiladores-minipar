@@ -39,6 +39,7 @@ export const CompilerProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                     printErr(text: string) { console.error('[wasm-err]', text); }
                 };
                 const wasmModule = await window.createCompilerModule?.(moduleConfig);
+                if (!wasmModule) throw new Error('Falha ao inicializar módulo WASM');
                 if (!cancelled) setModuleRef(wasmModule);
             } catch (e: any) {
                 if (!cancelled) setError(e.message || String(e));
@@ -101,7 +102,7 @@ export const CompilerProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             const result = moduleRef.UTF8ToString(ptr);
             moduleRef._free_string(ptr);
             const parsed = JSON.parse(result);
-            
+
             if (parsed.success) {
                 return parsed.tac; // Retorna apenas o array de instruções TAC
             } else {
