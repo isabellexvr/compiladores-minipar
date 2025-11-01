@@ -371,27 +371,38 @@ string TACGenerator::generate_expression(ASTNode *node)
     }
     else if (auto arr = dynamic_cast<ArrayLiteralNode *>(node))
     {
-        // gerar cada elemento e criar temporários consecutivos
+        // Suporte a arrays possivelmente aninhados
         std::vector<std::string> elemTemps;
+        elemTemps.reserve(arr->elements.size());
         for (auto &el : arr->elements)
+        {
+            // Se elemento também for ArrayLiteralNode, generate_expression retornará temp base desse subarray
             elemTemps.push_back(generate_expression(el.get()));
-        // criar base temp para array
+        }
         std::string base = new_temp();
-        // instrução especial: base = array_init N
         instructions.push_back(TACInstruction(base, "array_init", to_string(elemTemps.size())));
-        // armazenar elementos: base[index] = temp  -> representado como op array_set, arg1=elemTemp, arg2=index
         for (size_t i = 0; i < elemTemps.size(); ++i)
         {
+            // array_set armazena referência (temp) ou valor escalar indistintamente
             instructions.push_back(TACInstruction(base, "array_set", elemTemps[i], to_string(i)));
         }
         return base;
     }
     else if (auto access = dynamic_cast<ArrayAccessNode *>(node))
     {
+        // Se base também é ArrayAccessNode, gera acesso 2D consolidado
+        if (auto inner = dynamic_cast<ArrayAccessNode *>(access->base.get()))
+        {
+            std::string baseBase = generate_expression(inner->base.get());
+            std::string innerIndex = generate_expression(inner->index.get());
+            std::string finalIndex = generate_expression(access->index.get());
+            std::string result = new_temp();
+            instructions.push_back(TACInstruction(result, "array_get2", baseBase, innerIndex + ":" + finalIndex));
+            return result;
+        }
         std::string baseTemp = generate_expression(access->base.get());
         std::string indexTemp = generate_expression(access->index.get());
         std::string result = new_temp();
-        // Represent array get: result = array_get baseTemp , indexTemp
         instructions.push_back(TACInstruction(result, "array_get", baseTemp, indexTemp));
         return result;
     }

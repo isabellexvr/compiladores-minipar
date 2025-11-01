@@ -107,6 +107,8 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
     env.clear();
     envStr.clear();
     channels.clear();
+    arrays.clear();
+    arraysNested.clear();
     buildingChannel.clear();
     receivingChannel.clear();
     expectedSendArgs = 0;
@@ -193,6 +195,42 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
             if (arrays.find(ins.arg1) != arrays.end())
             {
                 arrays[ins.result] = arrays[ins.arg1];
+                if (arraysNested.count(ins.arg1))
+                    arraysNested[ins.result] = arraysNested[ins.arg1];
+                // Se for um array aninhado, construir matriz física
+                bool hasNested = false;
+                if (arraysNested.count(ins.arg1))
+                {
+                    for (auto &sub : arraysNested[ins.arg1])
+                        if (!sub.empty())
+                        {
+                            hasNested = true;
+                            break;
+                        }
+                }
+                if (hasNested)
+                {
+                    // Finaliza matriz flatten: copiar flattenedRows ou construir a partir das refs
+                    auto &m = matrices[ins.result];
+                    m.clear();
+                    if (flattenedRows.count(ins.arg1))
+                    {
+                        m = flattenedRows[ins.arg1];
+                    }
+                    else
+                    {
+                        auto &refs = arraysNested[ins.arg1];
+                        for (auto &sub : refs)
+                        {
+                            if (!sub.empty() && arrays.count(sub))
+                                m.push_back(arrays[sub]);
+                            else
+                                m.push_back(std::vector<double>());
+                        }
+                    }
+                    if (!m.empty())
+                        arrayCols[ins.result] = (int)m[0].size();
+                }
             }
         }
         else if (ins.op == "+" || ins.op == "-" || ins.op == "*" || ins.op == "/" ||
@@ -400,6 +438,8 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
         {
             size_t sz = (size_t)valueOf(ins.arg1);
             arrays[ins.result] = std::vector<double>(sz, 0.0);
+            // Inicializa estrutura nested apenas; manter vazio para evitar acessos inválidos se não usado
+            arraysNested[ins.result] = std::vector<std::string>(sz, "");
         }
         else if (ins.op == "array_set")
         {
@@ -408,28 +448,71 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
             if (it != arrays.end())
             {
                 size_t idx = (size_t)valueOf(ins.arg2);
-                double val = valueOf(ins.arg1);
+                bool rhsIsArray = arrays.find(ins.arg1) != arrays.end();
                 if (idx < it->second.size())
-                    it->second[idx] = val;
+                {
+                    if (rhsIsArray)
+                    {
+                        // Apenas registra referência, não sobrescreve vetor numérico (mantém valor dummy)
+                        auto &nestVec = arraysNested[ins.result];
+                        if (nestVec.empty())
+                            nestVec = std::vector<std::string>(it->second.size(), "");
+                        nestVec[idx] = ins.arg1;
+                        // adicionar linha no flattenedRows
+                        auto &fr = flattenedRows[ins.result];
+                        if (fr.size() < it->second.size())
+                            fr.resize(it->second.size());
+                        fr[idx] = arrays[ins.arg1];
+                    }
+                    else
+                    {
+                        double val = valueOf(ins.arg1);
+                        it->second[idx] = val;
+                    }
+                }
             }
         }
         else if (ins.op == "array_get")
         {
+            // Acesso simples 1D escalar
             auto it = arrays.find(ins.arg1);
+            double val = 0.0;
             if (it != arrays.end())
             {
                 size_t idx = (size_t)valueOf(ins.arg2);
-                double val = (idx < it->second.size() ? it->second[idx] : 0.0);
-                // store into envF if fractional part present else env
-                if (val != (int)val)
-                    envF[ins.result] = val;
-                else
-                    env[ins.result] = (int)val;
+                if (idx < it->second.size())
+                    val = it->second[idx];
             }
-            else
+            env[ins.result] = (int)val;
+            envF[ins.result] = val;
+        }
+        else if (ins.op == "array_get2")
+        {
+            // arg1 = nome array base; arg2 = "i:j" índices
+            std::string ij = ins.arg2;
+            size_t colon = ij.find(':');
+            int i = 0, j = 0;
+            if (colon != std::string::npos)
             {
-                env[ins.result] = 0; // fallback
+                std::string si = ij.substr(0, colon);
+                std::string sj = ij.substr(colon + 1);
+                i = (int)valueOf(si);
+                j = (int)valueOf(sj);
             }
+            std::cerr << "DEBUG array_get2 base=" << ins.arg1 << " i=" << i << " j=" << j << std::endl;
+            double val = 0.0;
+            if (matrices.count(ins.arg1) && i >= 0)
+            {
+                auto &mat = matrices[ins.arg1];
+                if (i < (int)mat.size())
+                {
+                    auto &row = mat[i];
+                    if (j >= 0 && j < (int)row.size())
+                        val = row[j];
+                }
+            }
+            env[ins.result] = (int)val;
+            envF[ins.result] = val;
         }
         ip = next_ip;
     }

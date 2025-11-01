@@ -42,6 +42,14 @@ private:
     std::vector<int> receivedMessage;
     // armazenamento simples de arrays: nome -> vetor de double (suporta int/float)
     std::unordered_map<std::string, std::vector<double>> arrays;
+    // Para arrays aninhados: guarda referências a subarrays (nome do temp de subarray ou vazio se elemento escalar)
+    std::unordered_map<std::string, std::vector<std::string>> arraysNested;
+    // Alternativa segura para matrizes: armazenamento direto 2D (cada linha é um vetor de double)
+    std::unordered_map<std::string, std::vector<std::vector<double>>> matrices;
+    // Armazenamento temporário de linhas antes de atribuição final
+    std::unordered_map<std::string, std::vector<std::vector<double>>> flattenedRows;
+    // Número de colunas por array matricial flatten
+    std::unordered_map<std::string, int> arrayCols;
 
     double valueOf(const std::string &token) const;         // resolve nome ou literal
     std::string strValueOf(const std::string &token) const; // resolve string
