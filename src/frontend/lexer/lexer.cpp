@@ -12,6 +12,10 @@ static unordered_map<string, TokenType> keywords = {
     {"while", TokenType::WHILE},
     {"print", TokenType::PRINT},
     {"input", TokenType::INPUT},
+    {"fun", TokenType::FUN},
+    {"return", TokenType::RETURN},
+    {"true", TokenType::TRUE},
+    {"false", TokenType::FALSE},
     {"int", TokenType::INT},
     {"bool", TokenType::BOOL},
     {"string", TokenType::STRING},
@@ -146,6 +150,20 @@ vector<Token> Lexer::tokenize()
         case '/':
             tokens.push_back(Token(TokenType::DIVIDE, "/", start_line, start_column));
             break;
+        case '&':
+            if (peek() == '&')
+            {
+                tokens.push_back(Token(TokenType::AND, "&&", start_line, start_column));
+                advance();
+            }
+            break;
+        case '|':
+            if (peek() == '|')
+            {
+                tokens.push_back(Token(TokenType::OR, "||", start_line, start_column));
+                advance();
+            }
+            break;
         case '=':
             if (peek() == '=')
             {
@@ -162,6 +180,10 @@ vector<Token> Lexer::tokenize()
             {
                 tokens.push_back(Token(TokenType::NOT_EQUAL, "!=", start_line, start_column));
                 advance();
+            }
+            else
+            {
+                tokens.push_back(Token(TokenType::NOT, "!", start_line, start_column));
             }
             break;
         case '<':
@@ -203,6 +225,9 @@ vector<Token> Lexer::tokenize()
             break;
         case ',':
             tokens.push_back(Token(TokenType::COMMA, ",", start_line, start_column));
+            break;
+        case '.':
+            tokens.push_back(Token(TokenType::DOT, ".", start_line, start_column));
             break;
         default:
             break;

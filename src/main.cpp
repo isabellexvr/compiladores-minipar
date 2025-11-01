@@ -9,6 +9,8 @@
 #include "tac_generator.h"
 #include "arm_generator.h"
 #include "symbol_table.h"
+#include "tac_interpreter.h"
+#include "semantic_channels.h"
 
 using namespace std;
 
@@ -145,6 +147,11 @@ int main(int argc, char *argv[])
         }
         std::cout << s.name << " | " << stype << " | " << (s.data_type.empty() ? "int" : s.data_type) << " | scope=global\n";
     }
+    if (success)
+    {
+        std::cout << "Channel Arity Analysis:\n";
+        analyze_channel_arities(static_cast<ProgramNode *>(ast.get()), std::cout);
+    }
 
     std::cout << "\n=== INTERMEDIATE (TAC) ===\n";
     std::vector<TACInstruction> tac;
@@ -165,6 +172,14 @@ int main(int argc, char *argv[])
             opType = "CONDITIONAL_JUMP";
         else if (i.op == "goto")
             opType = "JUMP";
+        else if (i.op == "send")
+            opType = "CHANNEL_SEND";
+        else if (i.op == "send_arg")
+            opType = "CHANNEL_SEND_ARG";
+        else if (i.op == "receive")
+            opType = "CHANNEL_RECEIVE";
+        else if (i.op == "recv_arg")
+            opType = "CHANNEL_RECV_ARG";
         else if (i.op.empty())
             opType = "ASSIGN";
         else
@@ -185,10 +200,15 @@ int main(int argc, char *argv[])
     std::cout << "\n=== EXECUTION (SIMULATED) ===\n";
     if (success)
     {
-        TACGenerator gen;
-        std::stringstream ss;
-        gen.generate(static_cast<ProgramNode *>(ast.get()));
-        gen.print_tac(ss); /* Could reuse print_tac modification */
+        TACInterpreter interpreter;
+        std::stringstream runtimeOut;
+        auto finalEnv = interpreter.interpret(tac, runtimeOut);
+        std::cout << "output:\n"
+                  << runtimeOut.str();
+        if (finalEnv.count("resultado"))
+        {
+            std::cout << "resultado(final)=" << finalEnv["resultado"] << "\n";
+        }
     }
     std::cout << "done: " << (success ? "0" : "1") << "\n";
     return success ? 0 : 1;

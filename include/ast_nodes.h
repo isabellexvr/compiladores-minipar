@@ -103,7 +103,30 @@ struct ReceiveNode : public ASTNode
 {
     std::string channelName;
     std::vector<std::string> variables;
+    void accept(ASTVisitor &visitor) override;
+    std::string toString() const override;
+};
 
+struct FunctionDeclNode : public ASTNode
+{
+    std::string name;
+    std::vector<std::string> params;
+    std::unique_ptr<ASTNode> body; // SeqNode or single
+    void accept(ASTVisitor &visitor) override;
+    std::string toString() const override;
+};
+
+struct CallNode : public ASTNode
+{
+    std::string name;
+    std::vector<std::unique_ptr<ASTNode>> args;
+    void accept(ASTVisitor &visitor) override;
+    std::string toString() const override;
+};
+
+struct ReturnNode : public ASTNode
+{
+    std::unique_ptr<ASTNode> value;
     void accept(ASTVisitor &visitor) override;
     std::string toString() const override;
 };

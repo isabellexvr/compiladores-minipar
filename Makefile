@@ -15,7 +15,8 @@ SUBDIRS = \
     $(SRCDIR)/backend/optimization \
     $(SRCDIR)/emscripten \
     $(SRCDIR)/runtime/threads \
-    $(SRCDIR)/runtime/channels
+    $(SRCDIR)/runtime/channels \
+    $(SRCDIR)/middleend/runtime
 
 # Fontes para build NATIVO (exclui emscripten)
 SOURCES_ROOT = $(wildcard $(SRCDIR)/*.cpp)

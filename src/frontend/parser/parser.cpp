@@ -44,7 +44,88 @@ unique_ptr<ProgramNode> Parser::parse()
     {
         if (match(C_CHANNEL))
         {
-            // ... código do channel ...
+            // c_channel name comp1 comp2
+            consume();
+            if (match(IDENTIFIER))
+            {
+                std::string chName = current().value;
+                consume();
+                std::string c1 = match(IDENTIFIER) ? current().value : "";
+                if (match(IDENTIFIER))
+                    consume();
+                std::string c2 = match(IDENTIFIER) ? current().value : "";
+                if (match(IDENTIFIER))
+                    consume();
+                auto chDecl = make_unique<ChannelDeclNode>();
+                chDecl->name = chName;
+                chDecl->comp1 = c1;
+                chDecl->comp2 = c2;
+                program->statements.push_back(std::move(chDecl));
+                continue;
+            }
+        }
+        else if (match(FUN))
+        {
+            consume(); // fun
+            if (!match(IDENTIFIER))
+            {
+                consume();
+                continue;
+            }
+            std::string fname = current().value;
+            consume();
+            std::vector<std::string> params;
+            if (match(LPAREN))
+            {
+                consume();
+                if (!match(RPAREN))
+                {
+                    while (true)
+                    {
+                        if (match(IDENTIFIER))
+                        {
+                            params.push_back(current().value);
+                            consume();
+                        }
+                        if (match(COMMA))
+                        {
+                            consume();
+                            continue;
+                        }
+                        break;
+                    }
+                }
+                if (match(RPAREN))
+                    consume();
+            }
+            // body
+            std::unique_ptr<ASTNode> bodyNode;
+            if (match(LBRACE))
+            {
+                consume();
+                auto seq = make_unique<SeqNode>();
+                while (!match(RBRACE) && !match(END))
+                {
+                    auto st = parse_statement();
+                    if (st)
+                        seq->statements.push_back(std::move(st));
+                    else
+                        break;
+                }
+                if (match(RBRACE))
+                    consume();
+                bodyNode = std::move(seq);
+            }
+            else
+            {
+                bodyNode = parse_statement();
+            }
+            auto fdecl = make_unique<FunctionDeclNode>();
+            fdecl->name = fname;
+            fdecl->params = params;
+            fdecl->body = std::move(bodyNode);
+            program->statements.push_back(std::move(fdecl));
+            continue;
         }
         else if (match(SEQ))
         {
@@ -108,6 +189,79 @@ unique_ptr<SeqNode> Parser::parse_seq_block()
 
 unique_ptr<ASTNode> Parser::parse_statement()
 {
+    // Operações de canal: canal.send(...); canal.receive(...);
+    if (match(TokenType::IDENTIFIER) && peek().type == TokenType::DOT)
+    {
+        std::string channelName = current().value;
+        consume(); // canal
+        if (match(TokenType::DOT))
+            consume();
+        if (match(TokenType::IDENTIFIER))
+        {
+            std::string opName = current().value;
+            consume();
+            if (opName == "send")
+            {
+                auto sendNode = make_unique<SendNode>();
+                sendNode->channelName = channelName;
+                if (match(LPAREN))
+                {
+                    consume();
+                    if (!match(RPAREN))
+                    {
+                        while (true)
+                        {
+                            auto arg = parse_expression();
+                            if (arg)
+                                sendNode->arguments.push_back(std::move(arg));
+                            if (match(COMMA))
+                            {
+                                consume();
+                                continue;
+                            }
+                            break;
+                        }
+                    }
+                    if (match(RPAREN))
+                        consume();
+                }
+                if (match(SEMICOLON))
+                    consume();
+                return sendNode;
+            }
+            else if (opName == "receive")
+            {
+                auto recvNode = make_unique<ReceiveNode>();
+                recvNode->channelName = channelName;
+                if (match(LPAREN))
+                {
+                    consume();
+                    if (!match(RPAREN))
+                    {
+                        while (true)
+                        {
+                            if (match(IDENTIFIER))
+                            {
+                                recvNode->variables.push_back(current().value);
+                                consume();
+                            }
+                            if (match(COMMA))
+                            {
+                                consume();
+                                continue;
+                            }
+                            break;
+                        }
+                    }
+                    if (match(RPAREN))
+                        consume();
+                }
+                if (match(SEMICOLON))
+                    consume();
+                return recvNode;
+            }
+        }
+    }
     if (match(TokenType::IDENTIFIER) && peek().type == TokenType::ASSIGN)
     {
         // Assignment
@@ -140,6 +294,16 @@ unique_ptr<ASTNode> Parser::parse_statement()
         }
 
         return print_node;
+    }
+    else if (match(RETURN))
+    {
+        consume();
+        auto ret = make_unique<ReturnNode>();
+        if (!match(SEMICOLON))
+            ret->value = parse_expression();
+        if (match(SEMICOLON))
+            consume();
+        return ret;
     }
     else if (match(TokenType::INPUT))
     {
@@ -194,7 +358,20 @@ unique_ptr<ASTNode> Parser::parse_comparison()
 
 unique_ptr<ASTNode> Parser::parse_expression()
 {
-    return parse_comparison(); // MUDAR PARA ISSO
+    // lógica: comparação encadeada por AND / OR
+    auto left = parse_comparison();
+    while (match(AND) || match(OR))
+    {
+        TokenType op = current().type;
+        consume();
+        auto right = parse_comparison();
+        auto bin = make_unique<BinaryOpNode>();
+        bin->op = op;
+        bin->left = std::move(left);
+        bin->right = std::move(right);
+        left = std::move(bin);
+    }
+    return left;
     // REMOVER o código antigo abaixo:
     /*
     auto left = parse_term();
@@ -268,11 +445,63 @@ unique_ptr<ASTNode> Parser::parse_primary()
         consume();
         return num_node;
     }
+    else if (match(STRING_LITERAL))
+    {
+        auto str_node = make_unique<StringNode>();
+        str_node->value = current().value;
+        consume();
+        return str_node;
+    }
+    else if (match(TRUE) || match(FALSE))
+    {
+        auto bool_node = make_unique<BooleanNode>();
+        bool_node->value = match(TRUE);
+        consume();
+        return bool_node;
+    }
+    else if (match(BOOL))
+    { // treat 'bool' literal? skip
+    }
+    else if (match(NOT))
+    {
+        consume();
+        auto operand = parse_primary();
+        auto un = make_unique<UnaryOpNode>();
+        un->op = "!";
+        un->operand = std::move(operand);
+        return un;
+    }
     else if (match(IDENTIFIER))
     {
-        auto id_node = make_unique<IdentifierNode>();
-        id_node->name = current().value;
+        // Could be function call: IDENTIFIER '(' args ')' OR plain identifier
+        std::string name = current().value;
         consume();
+        if (match(LPAREN))
+        {
+            consume();
+            auto call = make_unique<CallNode>();
+            call->name = name;
+            if (!match(RPAREN))
+            {
+                while (true)
+                {
+                    auto arg = parse_expression();
+                    if (arg)
+                        call->args.push_back(std::move(arg));
+                    if (match(COMMA))
+                    {
+                        consume();
+                        continue;
+                    }
+                    break;
+                }
+            }
+            if (match(RPAREN))
+                consume();
+            return call;
+        }
+        auto id_node = make_unique<IdentifierNode>();
+        id_node->name = name;
         return id_node;
     }
     else if (match(LPAREN))

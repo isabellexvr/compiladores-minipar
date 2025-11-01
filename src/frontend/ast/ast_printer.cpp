@@ -165,6 +165,12 @@ void ASTPrinter::visit(BinaryOpNode &node)
     case TokenType::DIVIDE:
         op_str = "/";
         break;
+    case TokenType::AND:
+        op_str = "&&";
+        break;
+    case TokenType::OR:
+        op_str = "||";
+        break;
     case TokenType::EQUAL:
         op_str = "==";
         break;
@@ -226,4 +232,37 @@ void ASTPrinter::visit(IdentifierNode &node)
 void ASTPrinter::visit(BooleanNode &node)
 {
     printLine("Boolean: " + std::string(node.value ? "true" : "false"));
+}
+
+void ASTPrinter::visit(FunctionDeclNode &node)
+{
+    printLine("FunctionDecl: " + node.name);
+    if (node.body)
+    {
+        indentLevel++;
+        node.body->accept(*this);
+        indentLevel--;
+    }
+}
+
+void ASTPrinter::visit(CallNode &node)
+{
+    printLine("Call: " + node.name);
+    indentLevel++;
+    for (auto &a : node.args)
+    {
+        a->accept(*this);
+    }
+    indentLevel--;
+}
+
+void ASTPrinter::visit(ReturnNode &node)
+{
+    printLine("Return:");
+    if (node.value)
+    {
+        indentLevel++;
+        node.value->accept(*this);
+        indentLevel--;
+    }
 }

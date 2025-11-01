@@ -48,6 +48,10 @@ void build_tokens_array(std::stringstream &json, const std::vector<Token> &token
             case TokenType::NUMBER:
                 cat = "NUMBER";
                 break;
+            case TokenType::TRUE:
+            case TokenType::FALSE:
+                cat = "BOOLEAN";
+                break;
             case TokenType::ASSIGN:
             case TokenType::PLUS:
             case TokenType::MINUS:
@@ -59,6 +63,9 @@ void build_tokens_array(std::stringstream &json, const std::vector<Token> &token
             case TokenType::NOT_EQUAL:
             case TokenType::LESS:
             case TokenType::GREATER:
+            case TokenType::AND:
+            case TokenType::OR:
+            case TokenType::NOT:
                 cat = "OPERATOR";
                 break;
             case TokenType::LPAREN:
@@ -114,6 +121,10 @@ void build_tokens_array_unique(std::stringstream &json, const std::vector<Token>
             case TokenType::NUMBER:
                 typeStr = "NUMBER";
                 break;
+            case TokenType::TRUE:
+            case TokenType::FALSE:
+                typeStr = "BOOLEAN";
+                break;
             case TokenType::ASSIGN:
             case TokenType::PLUS:
             case TokenType::MINUS:
@@ -125,6 +136,9 @@ void build_tokens_array_unique(std::stringstream &json, const std::vector<Token>
             case TokenType::NOT_EQUAL:
             case TokenType::LESS:
             case TokenType::GREATER:
+            case TokenType::AND:
+            case TokenType::OR:
+            case TokenType::NOT:
                 typeStr = "OPERATOR";
                 break;
             case TokenType::LPAREN:

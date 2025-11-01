@@ -35,8 +35,33 @@ static void register_identifier(const string &name, SymbolTable &table)
 {
     if (!table.symbol_exists(name))
     {
-        table.add_symbol(name, SymbolType::VARIABLE, "int"); // default type assumption
+        table.add_symbol(name, SymbolType::VARIABLE, "int"); // default until inferred
     }
+}
+
+static std::string infer_type(ASTNode *node)
+{
+    if (!node)
+        return "?";
+    if (dynamic_cast<NumberNode *>(node))
+        return "int";
+    if (dynamic_cast<BooleanNode *>(node))
+        return "bool";
+    if (dynamic_cast<StringNode *>(node))
+        return "string";
+    if (auto bin = dynamic_cast<BinaryOpNode *>(node))
+    {
+        auto lt = infer_type(bin->left.get());
+        auto rt = infer_type(bin->right.get());
+        if (lt == rt)
+            return lt; // simplistic
+        return "?";
+    }
+    if (auto un = dynamic_cast<UnaryOpNode *>(node))
+        return infer_type(un->operand.get());
+    if (dynamic_cast<IdentifierNode *>(node))
+        return "int"; // fallback
+    return "?";
 }
 
 static void walk_node(ASTNode *node, SymbolTable &table)
@@ -48,6 +73,14 @@ static void walk_node(ASTNode *node, SymbolTable &table)
     {
         register_identifier(assign->identifier, table);
         walk_node(assign->expression.get(), table);
+        // refine type
+        Symbol *sym = table.get_symbol(assign->identifier);
+        if (sym)
+        {
+            std::string t = infer_type(assign->expression.get());
+            if (t != "?")
+                sym->data_type = t;
+        }
     }
     else if (auto print_n = dynamic_cast<PrintNode *>(node))
     {
@@ -61,6 +94,46 @@ static void walk_node(ASTNode *node, SymbolTable &table)
     {
         walk_node(bin->left.get(), table);
         walk_node(bin->right.get(), table);
+    }
+    else if (auto send = dynamic_cast<SendNode *>(node))
+    {
+        // garante registro do canal
+        if (!table.symbol_exists(send->channelName))
+            table.add_symbol(send->channelName, SymbolType::CHANNEL, "channel");
+        for (auto &a : send->arguments)
+            walk_node(a.get(), table);
+    }
+    else if (auto recv = dynamic_cast<ReceiveNode *>(node))
+    {
+        if (!table.symbol_exists(recv->channelName))
+            table.add_symbol(recv->channelName, SymbolType::CHANNEL, "channel");
+        for (auto &v : recv->variables)
+        {
+            register_identifier(v, table);
+        }
+    }
+    else if (auto ch = dynamic_cast<ChannelDeclNode *>(node))
+    {
+        if (!table.symbol_exists(ch->name))
+            table.add_symbol(ch->name, SymbolType::CHANNEL, "channel");
+    }
+    else if (auto call = dynamic_cast<CallNode *>(node))
+    {
+        // function symbol registration (assume exists or create placeholder)
+        if (!table.symbol_exists(call->name))
+            table.add_symbol(call->name, SymbolType::FUNCTION, "func");
+        for (auto &a : call->args)
+            walk_node(a.get(), table);
+    }
+    else if (auto fdecl = dynamic_cast<FunctionDeclNode *>(node))
+    {
+        if (!table.symbol_exists(fdecl->name))
+            table.add_symbol(fdecl->name, SymbolType::FUNCTION, "func");
+        walk_node(fdecl->body.get(), table);
+    }
+    else if (auto ret = dynamic_cast<ReturnNode *>(node))
+    {
+        walk_node(ret->value.get(), table);
     }
     else if (auto id = dynamic_cast<IdentifierNode *>(node))
     {
