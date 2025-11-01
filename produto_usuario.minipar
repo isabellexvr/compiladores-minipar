@@ -1,14 +1,26 @@
 SEQ {
   produto1 = ["Smartphone", 1000, "Eletronicos"];
+  produto2 = ["Notebook", 3000, "Eletronicos"];
+  produto3 = ["TV", 2500, "Eletronicos"];
+  produto4 = ["Livro", 50, "Educacao"];
+  todos = [produto1, produto2, produto3, produto4];
   usuario1 = ["Joao", [1,0,1,0]];
-  nome_prod = produto1[0];
-  preco_prod = produto1[1];
-  categoria_prod = produto1[2];
-  nome_usuario = usuario1[0];
-  historico1 = usuario1[1][0];
-  historico2 = usuario1[1][1];
-  historico3 = usuario1[1][2];
-  historico4 = usuario1[1][3];
-  print "Produto:", nome_prod, preco_prod, categoria_prod;
-  print "Usuario:", nome_usuario, historico1, historico2, historico3, historico4;
+  # acesso direto ao nome
+  # codificação e rede inlined por enquanto devido a parsing de fun pendente
+  codificado = [0,0,0,0];
+  scores = [0.8,0.6,0.3,0.1];
+  s0 = scores[0];
+  s1 = scores[1];
+  s2 = scores[2];
+  s3 = scores[3];
+  # extrai nomes dos dois primeiros produtos
+  rec0_nome = todos[0][0];
+  rec1_nome = todos[1][0];
+  c0 = codificado[0];
+  c1 = codificado[1];
+  c2 = codificado[2];
+  c3 = codificado[3];
+  print "Usuario:", usuario1[0], "Codificado:", c0, c1, c2, c3;
+  print "Scores:", s0, s1, s2, s3;
+  print "Recomendados:", rec0_nome, rec1_nome;
 }

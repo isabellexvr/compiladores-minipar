@@ -154,35 +154,39 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
         size_t next_ip = ip + 1; // próximo padrão
         if (ins.op == "=")
         {
-            // tentar número; se não for número puro, tratar como string
-            char *end = nullptr;
-            long v = strtol(ins.arg1.c_str(), &end, 10);
-            if (*end == '\0')
+            // Se RHS já é variável string, copia direto
+            if (envStr.count(ins.arg1))
             {
-                env[ins.result] = (int)v;
+                envStr[ins.result] = envStr[ins.arg1];
+            }
+            else if (envF.count(ins.arg1))
+            {
+                envF[ins.result] = envF[ins.arg1];
+            }
+            else if (env.count(ins.arg1))
+            {
+                env[ins.result] = env[ins.arg1];
             }
             else
             {
-                // tenta float
-                char *endf = nullptr;
-                double vf = strtod(ins.arg1.c_str(), &endf);
-                if (*endf == '\0')
+                // tentar número literal; se não for, tratar como string literal
+                char *end = nullptr;
+                long v = strtol(ins.arg1.c_str(), &end, 10);
+                if (*end == '\0')
                 {
-                    envF[ins.result] = vf;
+                    env[ins.result] = (int)v;
                 }
                 else
                 {
-                    // pode ser temp que já está em env / envF / envStr; prioriza string
-                    if (envStr.find(ins.arg1) != envStr.end())
-                        envStr[ins.result] = envStr[ins.arg1];
-                    else if (envF.find(ins.arg1) != envF.end())
-                        envF[ins.result] = envF[ins.arg1];
-                    else if (env.find(ins.arg1) != env.end())
-                        env[ins.result] = env[ins.arg1];
+                    char *endf = nullptr;
+                    double vf = strtod(ins.arg1.c_str(), &endf);
+                    if (*endf == '\0')
+                    {
+                        envF[ins.result] = vf;
+                    }
                     else
                     {
-                        // literal string
-                        envStr[ins.result] = ins.arg1;
+                        envStr[ins.result] = ins.arg1; // literal string crua
                     }
                 }
             }
@@ -258,11 +262,22 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
         {
             // Prioridade: string literal/var, depois float, depois int. Se for temp de array com string no índice anterior, já resolvido antes.
             if (envStr.find(ins.arg1) != envStr.end())
+            {
                 out << envStr[ins.arg1];
+            }
             else if (envF.find(ins.arg1) != envF.end())
+            {
                 out << envF[ins.arg1];
-            else
+            }
+            else if (env.find(ins.arg1) != env.end())
+            {
                 out << env[ins.arg1];
+            }
+            else
+            {
+                // Se não está em nenhum ambiente, tratar como literal string crua (ex: "Usuario:")
+                out << ins.arg1;
+            }
             if (ins.op == "print_last")
                 out << "\n";
             else
@@ -433,15 +448,42 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
                     }
                     else
                     {
-                        // Decide se é string ou numérico
+                        // Decide se é string ou numérico (heurística semelhante à atribuição '=')
+                        // 1. Se já é variável string
                         if (envStr.count(ins.arg1))
                         {
                             arraysStr[ins.result][idx] = envStr[ins.arg1];
                         }
+                        // 2. Se é variável float
+                        else if (envF.count(ins.arg1))
+                        {
+                            it->second[idx] = envF[ins.arg1];
+                        }
+                        // 3. Se é variável int
+                        else if (env.count(ins.arg1))
+                        {
+                            it->second[idx] = (double)env[ins.arg1];
+                        }
                         else
                         {
-                            double val = valueOf(ins.arg1);
-                            it->second[idx] = val;
+                            // 4. Tenta literal numérico (int ou float). Se não for, trata como string literal.
+                            char *endInt = nullptr;
+                            long vi = strtol(ins.arg1.c_str(), &endInt, 10);
+                            char *endF = nullptr;
+                            double vf = strtod(ins.arg1.c_str(), &endF);
+                            if (*endF == '\0')
+                            {
+                                it->second[idx] = vf; // literal float ou int consumido como float
+                            }
+                            else if (*endInt == '\0')
+                            {
+                                it->second[idx] = (double)vi; // literal int
+                            }
+                            else
+                            {
+                                // 5. String literal crua (ex: Joao, Smartphone, etc.)
+                                arraysStr[ins.result][idx] = ins.arg1;
+                            }
                         }
                     }
                 }
@@ -488,14 +530,15 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
                     if (arraysStr.count(ins.arg1) && idx < arraysStr[ins.arg1].size() && !arraysStr[ins.arg1][idx].empty())
                     {
                         envStr[ins.result] = arraysStr[ins.arg1][idx];
-                            // não define env/int placeholder para evitar sobrescrever string em atribuições futuras
-                            envF.erase(ins.result);
-                            env.erase(ins.result);
+                        // não define env/int placeholder para evitar sobrescrever string em atribuições futuras
+                        envF.erase(ins.result);
+                        env.erase(ins.result);
                     }
                     else
                     {
-                        env[ins.result] = (int)val;
+                        // Preserva tanto int quanto float; se valor tem parte fracionária manter envF.
                         envF[ins.result] = val;
+                        env[ins.result] = (int)val; // ainda armazena inteiro para operações booleanas
                     }
                 }
             }
