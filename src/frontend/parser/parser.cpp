@@ -194,22 +194,43 @@ unique_ptr<ProgramNode> Parser::parse()
 
 unique_ptr<SeqNode> Parser::parse_seq_block()
 {
-    consume(); // consumir SEQ
+    consume(); // consumir 'SEQ'
     auto seq = make_unique<SeqNode>();
-
-    // Parse statements até encontrar outro SEQ, PAR, ou fim
-    while (!match(END) && !match(SEQ) && !match(PAR) && !match(ELSE) && !match(RBRACE))
+    bool hasBrace = false;
+    if (match(LBRACE))
     {
+        consume();
+        hasBrace = true;
+    }
+
+    // Loop de coleta de statements dentro do bloco SEQ.
+    // Caso haja '{', continuamos até '}' correspondente.
+    // Caso não haja '{', paramos ao encontrar início de outro bloco estrutural ou fim.
+    while (!match(END))
+    {
+        if (hasBrace && match(RBRACE))
+            break; // fim do bloco com chaves
+        if (!hasBrace && (match(SEQ) || match(PAR) || match(ELSE)))
+            break; // início de outro bloco estrutural sem chaves
+
         auto stmt = parse_statement();
         if (stmt)
         {
             seq->statements.push_back(std::move(stmt));
+            continue;
         }
-        else
+        // Se não reconheceu a statement mas ainda não é fim de bloco, consumir token para evitar loop infinito.
+        if (!match(END))
         {
-            break;
+            // Se encontrar '}', sair (caso tenha sido não tratado como stmt)
+            if (match(RBRACE))
+                break;
+            consume();
         }
     }
+
+    if (hasBrace && match(RBRACE))
+        consume(); // consumir '}' de fechamento
 
     return seq;
 }

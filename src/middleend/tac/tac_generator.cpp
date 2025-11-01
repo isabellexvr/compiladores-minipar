@@ -162,33 +162,22 @@ void TACGenerator::generate_statement(ASTNode *stmt)
     {
         string start_label = new_label();
         string end_label = new_label();
-
-        // Label de início do loop
+        // início
         instructions.push_back(TACInstruction(start_label, "label", ""));
-
-        // Gerar condição
         string cond_temp = generate_expression(while_node->condition.get());
-
-        // if_false cond_temp goto end_label
         instructions.push_back(TACInstruction("", "if_false", cond_temp, end_label));
-
-        // Gerar corpo do while
+        // corpo
         if (auto body_seq = dynamic_cast<SeqNode *>(while_node->body.get()))
         {
             for (auto &body_stmt : body_seq->statements)
-            {
                 generate_statement(body_stmt.get());
-            }
         }
-        else
+        else if (while_node->body)
         {
             generate_statement(while_node->body.get());
         }
-
-        // goto start_label
+        // volta
         instructions.push_back(TACInstruction("", "goto", start_label));
-
-        // Label de fim do loop
         instructions.push_back(TACInstruction(end_label, "label", ""));
     }
     else if (auto call = dynamic_cast<CallNode *>(stmt))

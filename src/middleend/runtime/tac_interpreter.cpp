@@ -204,6 +204,44 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
                  ins.op == "==" || ins.op == "!=" || ins.op == "<" || ins.op == "<=" ||
                  ins.op == ">" || ins.op == ">=" || ins.op == "&&" || ins.op == "||" || ins.op == "!")
         {
+            // Concatenacao de arrays usando '+' se ambos operandos forem arrays
+            if (ins.op == "+" && arrays.find(ins.arg1) != arrays.end() && arrays.find(ins.arg2) != arrays.end())
+            {
+                const auto &leftArr = arrays[ins.arg1];
+                const auto &rightArr = arrays[ins.arg2];
+                std::vector<double> newArr;
+                newArr.reserve(leftArr.size() + rightArr.size());
+                newArr.insert(newArr.end(), leftArr.begin(), leftArr.end());
+                newArr.insert(newArr.end(), rightArr.begin(), rightArr.end());
+                arrays[ins.result] = std::move(newArr);
+                // Concatenar strings paralelas
+                std::vector<std::string> newStrs;
+                const auto &leftStrs = arraysStr[ins.arg1];
+                const auto &rightStrs = arraysStr[ins.arg2];
+                newStrs.reserve(leftStrs.size() + rightStrs.size());
+                newStrs.insert(newStrs.end(), leftStrs.begin(), leftStrs.end());
+                newStrs.insert(newStrs.end(), rightStrs.begin(), rightStrs.end());
+                arraysStr[ins.result] = std::move(newStrs);
+                // Concatenar referencias nested
+                if (arraysNested.count(ins.arg1) || arraysNested.count(ins.arg2))
+                {
+                    std::vector<std::string> newNested;
+                    auto leftN = arraysNested.count(ins.arg1) ? arraysNested[ins.arg1] : std::vector<std::string>(leftArr.size(), "");
+                    auto rightN = arraysNested.count(ins.arg2) ? arraysNested[ins.arg2] : std::vector<std::string>(rightArr.size(), "");
+                    newNested.reserve(leftN.size() + rightN.size());
+                    newNested.insert(newNested.end(), leftN.begin(), leftN.end());
+                    newNested.insert(newNested.end(), rightN.begin(), rightN.end());
+                    arraysNested[ins.result] = std::move(newNested);
+                }
+                // Limpa env numérico para evitar impressão incorreta
+                env.erase(ins.result);
+                envF.erase(ins.result);
+                // já tratou concatenação; seguir para próxima instrução
+                next_ip = ip + 1;
+                ip = next_ip - 1;
+                // Avança sem executar demais blocos
+                ip = next_ip - 1;
+            }
             // Verifica se algum dos operandos é float (seja como variável ou como literal)
             bool isFloat1 = envF.count(ins.arg1) || (ins.arg1.find('.') != std::string::npos);
             bool isFloat2 = envF.count(ins.arg2) || (ins.arg2.find('.') != std::string::npos);
@@ -264,6 +302,28 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
             if (envStr.find(ins.arg1) != envStr.end())
             {
                 out << envStr[ins.arg1];
+            }
+            else if (arrays.find(ins.arg1) != arrays.end())
+            {
+                // Imprime array: primeiro tenta strings, senão valores numéricos
+                bool hasString = arraysStr.count(ins.arg1) && !arraysStr[ins.arg1].empty();
+                size_t sz = arrays[ins.arg1].size();
+                for (size_t k = 0; k < sz; ++k)
+                {
+                    if (hasString && k < arraysStr[ins.arg1].size() && !arraysStr[ins.arg1][k].empty())
+                        out << arraysStr[ins.arg1][k];
+                    else
+                    {
+                        double v = arrays[ins.arg1][k];
+                        // decide formato (se tem parte fracionaria significativa)
+                        if (v == (int)v)
+                            out << (int)v;
+                        else
+                            out << v;
+                    }
+                    if (k + 1 < sz)
+                        out << " ";
+                }
             }
             else if (envF.find(ins.arg1) != envF.end())
             {
