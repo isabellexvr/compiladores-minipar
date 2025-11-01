@@ -108,6 +108,7 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
     envStr.clear();
     channels.clear();
     arrays.clear();
+    arraysStr.clear();
     arraysNested.clear();
     buildingChannel.clear();
     receivingChannel.clear();
@@ -171,19 +172,13 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
                 }
                 else
                 {
-                    // pode ser temp que já está em env ou envStr
-                    if (env.find(ins.arg1) != env.end())
-                    {
-                        env[ins.result] = env[ins.arg1];
-                    }
-                    else if (envF.find(ins.arg1) != envF.end())
-                    {
-                        envF[ins.result] = envF[ins.arg1];
-                    }
-                    else if (envStr.find(ins.arg1) != envStr.end())
-                    {
+                    // pode ser temp que já está em env / envF / envStr; prioriza string
+                    if (envStr.find(ins.arg1) != envStr.end())
                         envStr[ins.result] = envStr[ins.arg1];
-                    }
+                    else if (envF.find(ins.arg1) != envF.end())
+                        envF[ins.result] = envF[ins.arg1];
+                    else if (env.find(ins.arg1) != env.end())
+                        env[ins.result] = env[ins.arg1];
                     else
                     {
                         // literal string
@@ -197,40 +192,8 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
                 arrays[ins.result] = arrays[ins.arg1];
                 if (arraysNested.count(ins.arg1))
                     arraysNested[ins.result] = arraysNested[ins.arg1];
-                // Se for um array aninhado, construir matriz física
-                bool hasNested = false;
-                if (arraysNested.count(ins.arg1))
-                {
-                    for (auto &sub : arraysNested[ins.arg1])
-                        if (!sub.empty())
-                        {
-                            hasNested = true;
-                            break;
-                        }
-                }
-                if (hasNested)
-                {
-                    // Finaliza matriz flatten: copiar flattenedRows ou construir a partir das refs
-                    auto &m = matrices[ins.result];
-                    m.clear();
-                    if (flattenedRows.count(ins.arg1))
-                    {
-                        m = flattenedRows[ins.arg1];
-                    }
-                    else
-                    {
-                        auto &refs = arraysNested[ins.arg1];
-                        for (auto &sub : refs)
-                        {
-                            if (!sub.empty() && arrays.count(sub))
-                                m.push_back(arrays[sub]);
-                            else
-                                m.push_back(std::vector<double>());
-                        }
-                    }
-                    if (!m.empty())
-                        arrayCols[ins.result] = (int)m[0].size();
-                }
+                if (arraysStr.count(ins.arg1))
+                    arraysStr[ins.result] = arraysStr[ins.arg1];
             }
         }
         else if (ins.op == "+" || ins.op == "-" || ins.op == "*" || ins.op == "/" ||
@@ -293,6 +256,7 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
         }
         else if (ins.op == "print" || ins.op == "print_last")
         {
+            // Prioridade: string literal/var, depois float, depois int. Se for temp de array com string no índice anterior, já resolvido antes.
             if (envStr.find(ins.arg1) != envStr.end())
                 out << envStr[ins.arg1];
             else if (envF.find(ins.arg1) != envF.end())
@@ -440,6 +404,7 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
             arrays[ins.result] = std::vector<double>(sz, 0.0);
             // Inicializa estrutura nested apenas; manter vazio para evitar acessos inválidos se não usado
             arraysNested[ins.result] = std::vector<std::string>(sz, "");
+            arraysStr[ins.result] = std::vector<std::string>(sz, "");
         }
         else if (ins.op == "array_set")
         {
@@ -458,16 +423,26 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
                         if (nestVec.empty())
                             nestVec = std::vector<std::string>(it->second.size(), "");
                         nestVec[idx] = ins.arg1;
-                        // adicionar linha no flattenedRows
-                        auto &fr = flattenedRows[ins.result];
-                        if (fr.size() < it->second.size())
-                            fr.resize(it->second.size());
-                        fr[idx] = arrays[ins.arg1];
+                        // strings aninhadas são tratadas copiando vetor de strings correspondente
+                        if (arraysStr.count(ins.arg1))
+                        {
+                            if (arraysStr[ins.result].size() < it->second.size())
+                                arraysStr[ins.result].resize(it->second.size());
+                            // Não é coleção de strings diretas, mas manter vazio.
+                        }
                     }
                     else
                     {
-                        double val = valueOf(ins.arg1);
-                        it->second[idx] = val;
+                        // Decide se é string ou numérico
+                        if (envStr.count(ins.arg1))
+                        {
+                            arraysStr[ins.result][idx] = envStr[ins.arg1];
+                        }
+                        else
+                        {
+                            double val = valueOf(ins.arg1);
+                            it->second[idx] = val;
+                        }
                     }
                 }
             }
@@ -498,6 +473,8 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
                         // Copia estrutura nested adicional (permite 3D futuramente)
                         if (arraysNested.count(subName))
                             arraysNested[ins.result] = arraysNested[subName];
+                        if (arraysStr.count(subName))
+                            arraysStr[ins.result] = arraysStr[subName];
                         handledSubarray = true;
                         env[ins.result] = 0;
                         envF[ins.result] = 0.0;
@@ -507,8 +484,19 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
                 {
                     if (idx < it->second.size())
                         val = it->second[idx];
-                    env[ins.result] = (int)val;
-                    envF[ins.result] = val;
+                    // Se houver string nesse índice, prioriza string
+                    if (arraysStr.count(ins.arg1) && idx < arraysStr[ins.arg1].size() && !arraysStr[ins.arg1][idx].empty())
+                    {
+                        envStr[ins.result] = arraysStr[ins.arg1][idx];
+                            // não define env/int placeholder para evitar sobrescrever string em atribuições futuras
+                            envF.erase(ins.result);
+                            env.erase(ins.result);
+                    }
+                    else
+                    {
+                        env[ins.result] = (int)val;
+                        envF[ins.result] = val;
+                    }
                 }
             }
         }

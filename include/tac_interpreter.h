@@ -42,6 +42,8 @@ private:
     std::vector<int> receivedMessage;
     // armazenamento simples de arrays: nome -> vetor de double (suporta int/float)
     std::unordered_map<std::string, std::vector<double>> arrays;
+    // Armazenamento paralelo para elementos string em arrays heterogêneos
+    std::unordered_map<std::string, std::vector<std::string>> arraysStr;
     // Para arrays aninhados: guarda referências a subarrays (nome do temp de subarray ou vazio se elemento escalar)
     std::unordered_map<std::string, std::vector<std::string>> arraysNested;
     // Alternativa segura para matrizes: armazenamento direto 2D (cada linha é um vetor de double)
