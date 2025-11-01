@@ -57,6 +57,18 @@ vector<TACInstruction> TACGenerator::generate(ProgramNode *program)
     return instructions;
 }
 
+std::vector<TACInstruction> TACGenerator::generate_from_seq(SeqNode *seq)
+{
+    instructions.clear();
+    temp_counter = 0;
+    label_counter = 0;
+    if (!seq)
+        return instructions;
+    for (auto &st : seq->statements)
+        generate_statement(st.get());
+    return instructions;
+}
+
 void TACGenerator::generate_statement(ASTNode *stmt)
 {
     if (!stmt)

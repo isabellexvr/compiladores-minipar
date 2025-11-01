@@ -93,9 +93,20 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
     buildingMessage.clear();
     receivedMessage.clear();
 
-    for (size_t idx = 0; idx < instrs.size(); ++idx)
+    // Mapa de labels para índices
+    std::unordered_map<std::string, size_t> labelMap;
+    for (size_t i = 0; i < instrs.size(); ++i)
     {
-        const auto &ins = instrs[idx];
+        if (instrs[i].op == "label")
+            labelMap[instrs[i].result] = i;
+    }
+
+    // Loop manual com ip para permitir saltos
+    size_t ip = 0;
+    while (ip < instrs.size())
+    {
+        const auto &ins = instrs[ip];
+        size_t next_ip = ip + 1; // próximo padrão
         if (ins.op == "=")
         {
             // tentar número; se não for número puro, tratar como string
@@ -166,6 +177,28 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
             else
                 out << env[ins.arg1] << "\n";
         }
+        else if (ins.op == "label")
+        {
+            // nada a fazer
+        }
+        else if (ins.op == "if_false")
+        {
+            int cond = valueOf(ins.arg1);
+            if (cond == 0)
+            {
+                // salto para label em arg2
+                auto it = labelMap.find(ins.arg2);
+                if (it != labelMap.end())
+                    next_ip = it->second + 1; // executar após label alvo
+            }
+        }
+        else if (ins.op == "goto")
+        {
+            // arg1 contém label destino
+            auto it = labelMap.find(ins.arg1);
+            if (it != labelMap.end())
+                next_ip = it->second + 1;
+        }
         else if (ins.op == "send")
         {
             finalizeSend();
@@ -209,6 +242,7 @@ std::unordered_map<std::string, int> TACInterpreter::interpret(const std::vector
                     finalizeReceive();
             }
         }
+        ip = next_ip;
     }
     finalizeSend();
     finalizeReceive();

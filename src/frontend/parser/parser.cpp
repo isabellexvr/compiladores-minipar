@@ -558,21 +558,24 @@ unique_ptr<ASTNode> Parser::parse_while_statement()
         consume();
     }
 
-    // Parse body - assumindo que as próximas instruções pertencem ao while
-    // Em uma versão mais robusta, deveríamos detectar blocos com {}
-    auto body_seq = make_unique<SeqNode>();
-
-    // Parse as instruções que provavelmente são do corpo do while
-    // Por enquanto, vamos assumir que são as próximas 2 instruções
-    for (int i = 0; i < 2 && !match(END); i++)
+    // Novo corpo: se próximo token for SEQ, usar bloco completo
+    if (match(SEQ))
     {
-        auto stmt = parse_statement();
-        if (stmt)
-        {
-            body_seq->statements.push_back(std::move(stmt));
-        }
+        while_node->body = parse_seq_block();
     }
-
-    while_node->body = std::move(body_seq);
+    else
+    {
+        auto body_seq = make_unique<SeqNode>();
+        // fallback antigo limitado
+        for (int i = 0; i < 2 && !match(END) && !match(SEQ) && !match(PAR); i++)
+        {
+            auto stmt = parse_statement();
+            if (stmt)
+                body_seq->statements.push_back(std::move(stmt));
+            else
+                break;
+        }
+        while_node->body = std::move(body_seq);
+    }
     return while_node;
 }
