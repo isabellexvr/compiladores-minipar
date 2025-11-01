@@ -247,6 +247,12 @@ string TACGenerator::generate_expression(ASTNode *node)
         instructions.push_back(TACInstruction(temp, "=", b->value ? "1" : "0"));
         return temp;
     }
+    else if (auto str = dynamic_cast<StringNode *>(node))
+    {
+        string temp = new_temp();
+        instructions.push_back(TACInstruction(temp, "=", str->value)); // guarda literal bruto
+        return temp;
+    }
     // REMOVA a parte do UnaryOpNode por enquanto
 
     return "error";

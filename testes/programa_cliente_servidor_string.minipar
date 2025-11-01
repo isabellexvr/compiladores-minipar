@@ -1,0 +1,11 @@
+# Programa com operacao como string
+c_channel calculadora computador_1 computador_2
+
+SEQ
+  operacao = "+";
+  valor1 = 9;
+  valor2 = 4;
+  resultado = 0;
+  calculadora.send(operacao, valor1, valor2, resultado);
+  calculadora.receive(operacao, valor1, valor2, resultado);
+  print resultado;
