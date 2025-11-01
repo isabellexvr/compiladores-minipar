@@ -12,7 +12,7 @@ Token& Parser::current() {
 }
 
 Token& Parser::peek() {
-    static Token eof(TokenType::END_OF_FILE, "");
+    static Token eof(TokenType::END, "");
     if (current_token + 1 < tokens.size()) {
         return tokens[current_token + 1];
     }
@@ -21,7 +21,7 @@ Token& Parser::peek() {
 
 void Parser::consume() {
     if (current_token < tokens.size() && 
-        tokens[current_token].type != TokenType::END_OF_FILE) {
+        tokens[current_token].type != TokenType::END) {
         current_token++;
     }
 }
@@ -33,7 +33,7 @@ bool Parser::match(TokenType type) {
 unique_ptr<ProgramNode> Parser::parse() {
     auto program = make_unique<ProgramNode>();
     
-    while (!match(END_OF_FILE)) {
+    while (!match(END)) {
         if (match(C_CHANNEL)) {
             // ... código do channel ...
         } else if (match(SEQ)) {
@@ -70,7 +70,7 @@ unique_ptr<SeqNode> Parser::parse_seq_block() {
     auto seq = make_unique<SeqNode>();
     
     // Parse statements até encontrar outro SEQ, PAR, ou fim
-    while (!match(END_OF_FILE) && !match(SEQ) && !match(PAR)) {
+    while (!match(END) && !match(SEQ) && !match(PAR)) {
         auto stmt = parse_statement();
         if (stmt) {
             seq->statements.push_back(std::move(stmt));
@@ -140,7 +140,7 @@ unique_ptr<ASTNode> Parser::parse_comparison() {
     auto left = parse_term();
     
     while (match(LESS_EQUAL) || match(LESS) || match(GREATER) || match(GREATER_EQUAL) ||
-           match(EQUALS) || match(NOT_EQUALS)) {
+           match(EQUAL) || match(NOT_EQUAL)) {
         TokenType op = current().type;
         consume();
         
@@ -267,7 +267,7 @@ unique_ptr<ASTNode> Parser::parse_while_statement() {
     
     // Parse as instruções que provavelmente são do corpo do while
     // Por enquanto, vamos assumir que são as próximas 2 instruções
-    for (int i = 0; i < 2 && !match(END_OF_FILE); i++) {
+    for (int i = 0; i < 2 && !match(END); i++) {
         auto stmt = parse_statement();
         if (stmt) {
             body_seq->statements.push_back(std::move(stmt));

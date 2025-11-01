@@ -145,10 +145,10 @@ string TACGenerator::generate_expression(ASTNode *node)
         case TokenType::DIVIDE:
             op = "/";
             break;
-        case TokenType::EQUALS:
+    case TokenType::EQUAL:
             op = "==";
             break;
-        case TokenType::NOT_EQUALS:
+    case TokenType::NOT_EQUAL:
             op = "!=";
             break;
         case TokenType::LESS:

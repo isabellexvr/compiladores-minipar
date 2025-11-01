@@ -165,10 +165,10 @@ void ASTPrinter::visit(BinaryOpNode &node)
     case TokenType::DIVIDE:
         op_str = "/";
         break;
-    case TokenType::EQUALS:
+    case TokenType::EQUAL:
         op_str = "==";
         break;
-    case TokenType::NOT_EQUALS:
+    case TokenType::NOT_EQUAL:
         op_str = "!=";
         break;
     case TokenType::LESS:

@@ -149,7 +149,7 @@ vector<Token> Lexer::tokenize()
         case '=':
             if (peek() == '=')
             {
-                tokens.push_back(Token(TokenType::EQUALS, "==", start_line, start_column));
+                tokens.push_back(Token(TokenType::EQUAL, "==", start_line, start_column));
                 advance();
             }
             else
@@ -160,7 +160,7 @@ vector<Token> Lexer::tokenize()
         case '!':
             if (peek() == '=')
             {
-                tokens.push_back(Token(TokenType::NOT_EQUALS, "!=", start_line, start_column));
+                tokens.push_back(Token(TokenType::NOT_EQUAL, "!=", start_line, start_column));
                 advance();
             }
             break;
@@ -209,6 +209,6 @@ vector<Token> Lexer::tokenize()
         }
         advance();
     }
-    tokens.push_back(Token(TokenType::END_OF_FILE, "", line, column));
+    tokens.push_back(Token(TokenType::END, "", line, column));
     return tokens;
 }

@@ -1,6 +1,8 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <iomanip>
+#include <chrono>
 #include "lexer.h"
 #include "parser.h"
 #include "ast_printer.h"
@@ -24,79 +26,80 @@ string read_file(const string &filename)
     return buffer.str();
 }
 
-int main(int argc, char *argv[])
-{
-    if (argc != 2)
-    {
-        cout << "Uso: " << argv[0] << " <arquivo.minipar>" << endl;
-        return 1;
-    }
+static std::string timestamp_iso_utc(){
+    auto now = std::chrono::system_clock::now();
+    auto t = std::chrono::system_clock::to_time_t(now);
+    std::tm tm{}; gmtime_r(&t,&tm);
+    std::ostringstream oss; oss<<std::put_time(&tm, "%Y-%m-%dT%H:%M:%SZ");
+    return oss.str();
+}
 
-    string source_code = read_file(argv[1]);
-    if (source_code.empty())
-    {
-        return 1;
+static std::string token_category(TokenType t){
+    switch(t){
+        case TokenType::SEQ: case TokenType::PAR: case TokenType::IF: case TokenType::ELSE: case TokenType::WHILE: case TokenType::PRINT: case TokenType::INPUT: return "KEYWORD";
+        case TokenType::IDENTIFIER: return "IDENTIFIER";
+        case TokenType::NUMBER: case TokenType::STRING_LITERAL: return "LITERAL";
+        case TokenType::PLUS: case TokenType::MINUS: case TokenType::MULTIPLY: case TokenType::DIVIDE: case TokenType::ASSIGN: case TokenType::EQUAL: case TokenType::NOT_EQUAL: case TokenType::LESS: case TokenType::LESS_EQUAL: case TokenType::GREATER: case TokenType::GREATER_EQUAL: return "OPERATOR";
+        case TokenType::LPAREN: case TokenType::RPAREN: case TokenType::LBRACE: case TokenType::RBRACE: case TokenType::SEMICOLON: case TokenType::COMMA: return "DELIMITER";
+        case TokenType::END: return "END";
+        default: return "UNKNOWN";
     }
+}
 
-    cout << "=== ANALISADOR LÉXICO ===" << endl;
+int main(int argc, char *argv[]){
+    if(argc!=2){
+        std::cout << "Uso: " << argv[0] << " <arquivo.minipar>" << std::endl; return 1; }
+    std::string source_code = read_file(argv[1]);
+    if(source_code.empty()) return 1;
+
+    // Header estilo phases
+    std::cout << "=== COMPILATION METADATA ===\n";
+    std::cout << "timestamp: " << timestamp_iso_utc() << "\n";
+    std::cout << "compilerVersion: MiniPar 2025.1\n";
+    std::cout << "sourceLength: " << source_code.size() << "\n";
+
     Lexer lexer(source_code);
     auto tokens = lexer.tokenize();
 
-    // Mostrar apenas alguns tokens para não poluir a saída
-    int count = 0;
-    for (const auto &token : tokens)
-    {
-        if (count++ > 20)
-        {
-            cout << "... (mais tokens)" << endl;
-            break;
-        }
-        cout << "Token: " << static_cast<int>(token.type)
-             << " Valor: '" << token.value << "'"
-             << " Linha: " << token.line << endl;
-    }
+    std::cout << "\n=== LEXICAL ===\n";
+    std::cout << "totalTokens: " << tokens.size() << "\n";
+    std::cout << "Tokens (type/category/value@line:col)\n";
+    for(const auto &tk: tokens){
+        std::cout << static_cast<int>(tk.type) << "/" << token_category(tk.type) << "/'" << tk.value << "'@" << tk.line << ':' << tk.column << "\n"; }
 
-    cout << "\n=== ANALISADOR SINTÁTICO ===" << endl;
     Parser parser(tokens);
     auto ast = parser.parse();
+    bool success = ast!=nullptr;
 
-    if (ast)
-    {
-        cout << "AST gerada com sucesso!" << endl;
+    std::cout << "\n=== SYNTAX ===\nstatus: " << (success?"SUCCESS":"ERROR") << "\n";
+    if(success){
+        ASTPrinter printer; std::cout << "AST:\n" << printer.print(*ast) << "\n"; }
 
-        // Construir tabela de símbolos
-        SymbolTable symtab;
-        build_symbol_table(ast.get(), symtab);
-        print_symbol_table(symtab, cout);
+    std::cout << "\n=== SEMANTIC ===\n";
+    SymbolTable symtab;
+    if(success){ build_symbol_table(ast.get(), symtab); }
+    auto all = symtab.get_all_symbols();
+    std::cout << "symbols: " << all.size() << "\n";
+    for(const auto &s: all){
+        std::string stype;
+        switch(s.type){ case SymbolType::VARIABLE: stype="VARIABLE"; break; case SymbolType::FUNCTION: stype="FUNCTION"; break; case SymbolType::CHANNEL: stype="CHANNEL"; break; }
+        std::cout << s.name << " | " << stype << " | " << (s.data_type.empty()?"int":s.data_type) << " | scope=global\n"; }
 
-        // Imprimir AST
-        ASTPrinter printer;
-        cout << "\n=== ÁRVORE SINTÁTICA ===" << endl;
-        cout << printer.print(*ast) << endl;
+    std::cout << "\n=== INTERMEDIATE (TAC) ===\n";
+    std::vector<TACInstruction> tac;
+    if(success){ TACGenerator gen; tac = gen.generate(static_cast<ProgramNode*>(ast.get())); }
+    std::cout << "instructions: " << tac.size() << "\n";
+    for(const auto &i: tac){
+        std::string opType;
+        if(i.op=="print") opType="PRINT"; else if(i.op=="label") opType="LABEL"; else if(i.op=="if_false") opType="CONDITIONAL_JUMP"; else if(i.op=="goto") opType="JUMP"; else if(i.op.empty()) opType="ASSIGN"; else opType="BINARY"; 
+        std::cout << i.result << " = (" << i.op << ") " << i.arg1 << (i.arg2.empty()?"":" , ") << i.arg2 << " | type=" << opType << "\n"; }
 
-        cout << "\n=== CÓDIGO DE TRÊS ENDEREÇOS ===" << endl;
-        TACGenerator tac_gen;
-        auto tac = tac_gen.generate(ast.get());
+    std::cout << "\n=== CODEGEN (ARMv7) ===\n";
+    if(success){ ARMGenerator arm; auto code = arm.generate(tac); for(const auto &line: code) std::cout << line << "\n"; }
 
-        // Teste direto
-        cout << "DEBUG - TAC instructions:" << endl;
-        for (const auto &instr : tac) {
-            cout << "Result: '" << instr.result << "', Op: '" << instr.op 
-                << "', Arg1: '" << instr.arg1 << "', Arg2: '" << instr.arg2 << "'" << endl;
-        }
-
-        // Agora imprimir formatado
-        tac_gen.print_tac();
-
-        cout << "\n=== CÓDIGO ASSEMBLY ARMv7 ===" << endl;
-        ARMGenerator arm_gen;
-        auto arm_code = arm_gen.generate(tac);
-        arm_gen.print_arm();
-    }
-    else
-    {
-        cout << "Erro na análise sintática!" << endl;
-    }
-
-    return 0;
+    // Opcional: Execução simulada
+    std::cout << "\n=== EXECUTION (SIMULATED) ===\n";
+    if(success){ TACGenerator gen; std::stringstream ss; gen.generate(static_cast<ProgramNode*>(ast.get())); gen.print_tac(ss); /* Could reuse print_tac modification */ }
+    std::cout << "done: " << (success?"0":"1") << "\n";
+    return success?0:1;
 }
